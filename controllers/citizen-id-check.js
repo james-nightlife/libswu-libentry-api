@@ -9,6 +9,7 @@ const mysql_con_config = {
 }
 
 const citizenIDCheck = async (req, res, next) => {
+    // Check if request body exists and contains citizen_id
     if(
         req.body && 
         'citizen_id' in req.body && 
@@ -22,6 +23,7 @@ const citizenIDCheck = async (req, res, next) => {
         try{
             const query = 'SELECT * FROM rcode WHERE local_id = ?;';
             const [result, fields] = await mysql_con.execute(query, [citizen_id.substring(1, 5)])
+            // Check if local_id exists
             if(result.length === 0){
                 res.status(400).json({
                     'message' : 'Citizen ID is invalid'
@@ -34,34 +36,23 @@ const citizenIDCheck = async (req, res, next) => {
                 sum += parseInt(citizen_id[i]) * (13 - i);
             }
             const check_digit = (11 - (sum % 11)) % 10;
+            // Validate check digit
             if(check_digit === parseInt(citizen_id[12])){
-                // Valid Citizen ID
-                const query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
-                const [result, fields] = await mysql_con.execute(query, [citizen_id])
-                var authorized = false;
-                // Check if Citizen ID is already registered
-                if(result.length > 0){
-                    authorized = true;
-                }else{
-                    // Citizen ID is valid but not registered
+                const find_query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
+                const [result, fields] = await mysql_con.execute(find_query, [citizen_id])
+                // If visitor does not exist, register them
+                if(result.length === 0){
                     const query = 'INSERT INTO visitors (visitor_id) VALUES (?);';
                     await mysql_con.execute(query, [citizen_id]);
-                    authorized = true; // Now it is registered
                 }
-                if(authorized){
-                    const query = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
-                    await mysql_con.execute(query, [citizen_id]);
-                    // Citizen ID is valid and registered
-                    res.json({
-                        'message' : 'Citizen ID is valid',
-                        'citizen_id' : citizen_id,
-                        'local_th' : local_th,
-                    })
-                }else{
-                    res.status(400).json({
-                        'message' : 'Citizen ID is valid but not registered'
-                    })
-                }
+                // Sign in visitor
+                const query = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
+                await mysql_con.execute(query, [citizen_id]);
+                res.json({
+                    'message' : 'Citizen ID is valid',
+                    'citizen_id' : citizen_id,
+                    'local_th' : local_th,
+                })
             }else{
                 res.status(400).json({
                     'message' : 'Citizen ID is invalid'
@@ -79,107 +70,6 @@ const citizenIDCheck = async (req, res, next) => {
             'message' : 'Citizen ID is invalid'
         })
     }
-
-
-    /*
-    if(req.body){
-        const inputs = req.body;
-        if('citizen_id' in inputs){
-            const citizen_id = inputs.citizen_id;
-            if(citizen_id.length === 13 && /^[0-9]+$/.test(citizen_id)){
-                if(['1','2','3','4','5','6','7','8','9'].includes(citizen_id[0])){
-                    const query = 'SELECT * FROM rcode WHERE cal_id = ?;';
-                    const mysql_con = await mysql.createConnection({
-                        ...mysql_con_config,
-                    })
-                    try{
-                        const [result, fields] = await mysql_con.execute(query, [citizen_id.substring(1, 5)])
-                        if(result.length === 0){
-                            res.status(400).json({
-                                'message' : 'Citizen ID is invalid'
-                            })
-                            return;
-                        }else{
-                            
-                        }
-                    }catch(e){
-                        res.status(400).json({
-                            'message' : e
-                        })
-                        return;
-                    }finally{
-                        mysql_con.end();
-                    }
-                    var sum = 0;
-                    for(let i = 0; i < 12; i++){
-                        sum += parseInt(citizen_id[i]) * (13 - i);
-                    }
-                    const check_digit = (11 - (sum % 11)) % 10;
-                    if(check_digit === parseInt(citizen_id[12])){
-                        // Valid Citizen ID
-                        const mysql_con = await mysql.createConnection({
-                            ...mysql_con_config,
-                        })
-                        try{
-                            const query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
-                            const [result, fields] = await mysql_con.execute(query, [citizen_id])
-                            var authorized = false;
-                            // Check if Citizen ID is already registered
-                            if(result.length > 0){
-                                authorized = true;
-                            }else{
-                                // Citizen ID is valid but not registered
-                                const query = 'INSERT INTO visitors (visitor_id) VALUES (?);';
-                                await mysql_con.execute(query, [citizen_id]);
-                                authorized = true; // Now it is registered
-                            }
-                            if(authorized){
-                                const query = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
-                                await mysql_con.execute(query, [citizen_id]);
-                                // Citizen ID is valid and registered
-                                res.json({
-                                    'message' : 'Citizen ID is valid',
-                                    'citizen_id' : citizen_id,
-                                })
-                            }else{
-                                res.status(400).json({
-                                    'message' : 'Citizen ID is valid but not registered'
-                                })
-                            }
-                            mysql_con.end();
-                        }catch(e){
-                            res.status(400).json({
-                                'message' : e
-                            })
-                        }
-                    }else{
-                        res.status(400).json({
-                            'message' : 'Citizen ID is invalid'
-                        })
-                    }
-                }else{
-                    res.status(400).json({
-                        'message' : 'Citizen ID must start with 1-9'
-                    })
-                    return;
-                }
-            }else{
-                res.status(400).json({
-                    'message' : 'Citizen ID must be 13 digits'
-                })  
-            }
-        }else{
-            res.status(400).json({
-                'message' : 'No Citizen ID input'
-            })
-        }
-    }else{
-        res.status(400).json({
-            'message' : 'No Body'
-        })
-    }
-
-    */
 }
 
 export { citizenIDCheck }
