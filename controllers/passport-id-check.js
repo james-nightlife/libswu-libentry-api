@@ -16,7 +16,7 @@ const passportIDCheck = async (req, res, next) => {
         if('passport_id' in inputs){
             const passport_id = inputs.passport_id; 
             // Validate passport_id format: 1-2 uppercase letters followed by 6-8 digits or 1 uppercase letter followed by 3 digits, 1 uppercase letter and 3 digits
-            if(/(^[A-Z]{1,2}[0-9]{6,8}$)|(^[A-Z]{1}[0-9]{3}[A-Z]{1}[0-9]{3}$)/.test(passport_id)){
+            if(/(^[0-9A-Z]{8,}$)/.test(passport_id)){
                 const mysql_con = await mysql.createConnection({
                     ...mysql_con_config,
                 })
