@@ -9,55 +9,83 @@ const mysql_con_config = {
 }
 
 const passportIDCheck = async (req, res, next) => {
-    // Check if request body exists
-    if(req.body){
-        const inputs = req.body;
-        // Check if passport_id exists in request body
-        if('passport_id' in inputs){
-            const passport_id = inputs.passport_id; 
-            // Validate passport_id format: 1-2 uppercase letters followed by 6-8 digits or 1 uppercase letter followed by 3 digits, 1 uppercase letter and 3 digits
-            if(/(^[0-9A-Z]{8,}$)/.test(passport_id)){
-                const mysql_con = await mysql.createConnection({
-                    ...mysql_con_config,
+    const mysql_con = await mysql.createConnection({
+            ...mysql_con_config,
+        })
+    
+        try{
+            if(req.method !== 'POST'){
+                res.status(405).json({
+                    'message' : 'Method Not Allowed'
                 })
-                try{
-                    const find_query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
-                    const [result, fields] = await mysql_con.execute(find_query, [passport_id])
-                    // If visitor does not exist, register them
-                    if(result.length === 0){
-                        // Register visitor
-                        const query = 'INSERT INTO visitors (visitor_id) VALUES (?);';
-                        await mysql_con.execute(query, [passport_id]);
-                    }
-                    // Sign in visitor
-                    const query = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
-                    await mysql_con.execute(query, [passport_id]);
-                    res.json({
-                        'message' : 'Citizen ID is valid',
-                        'passport_id' : passport_id,
-                    })
-                    mysql_con.end();
-                }catch(e){
-                    res.status(400).json({
-                        'message' : e
-                    })
-                }
-            }else{
+                return;
+            }
+            if(!req.headers['content-type'] || !req.headers['content-type'].includes('application/json')){
+                res.status(415).json({
+                    'message' : 'Content-Type must be application/json'
+                })
+                return;
+            }
+            if(!req.body){
+                res.status(400).json({
+                    'message' : 'No Body'
+                })
+                return;
+            }
+            const inputs = req.body;
+            if(!('passport_id' in inputs)){
+                res.status(400).json({
+                    'message' : 'No Passport ID input'
+                })
+                return;
+            }
+            if(!/(^[0-9A-Z]{8,}$)/.test(inputs.passport_id)){
                 res.status(400).json({
                     'message' : 'Invalid Passport ID format'
                 })
                 return;
             }
-        }else{
-            res.status(400).json({
-                'message' : 'No Passport ID input'
+            if(!('phone_number' in inputs)){
+                res.status(400).json({
+                    'message' : 'No Phone Number input'
+                })
+                return;
+            }
+            if(inputs.phone_number.length < 9){
+                res.status(400).json({
+                    'message' : 'Phone Number is too short'
+                })
+                return;
+            }
+            const find_query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
+            const [result, fields] = await mysql_con.execute(find_query, [inputs.passport_id])
+            // If visitor does not exist, register them
+            if(result.length === 0){
+                // Register visitor
+                const query = 'INSERT INTO visitors (visitor_id, phone_number) VALUES (?, ?);';
+                await mysql_con.execute(query, [inputs.passport_id, inputs.phone_number]);
+            }
+            if(result[0].phone_number !== inputs.phone_number){
+                // Update phone number
+                const query = 'UPDATE visitors SET phone_number = ? WHERE visitor_id = ?;';
+                await mysql_con.execute(query, [inputs.phone_number, inputs.passport_id]);
+            }
+            // Sign in visitor
+            const query = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
+            await mysql_con.execute(query, [inputs.passport_id]);
+            res.json({
+                'message' : 'Citizen ID is valid',
+                'passport_id' : inputs.passport_id,
             })
-        }   
-    }else{
-        res.status(400).json({
-            'message' : 'No Body'
-        })
-    }
+        }catch(e){
+            res.status(400).json({
+                'message' : e
+            })
+            return;
+        }
+        finally{
+            mysql_con.end();
+        }
 }
 
 export { passportIDCheck }
