@@ -16,6 +16,9 @@ app.use('/citizen-id-check', citizenIdCheck);
 import passportIdCheck from '../routes/passport-id-check.js';
 app.use('/passport-id-check', passportIdCheck);
 
+import avService from '../routes/avservice.js';
+app.use('/avservice', avService);
+
 
 
 export { app };
