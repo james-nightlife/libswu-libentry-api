@@ -42,10 +42,13 @@ const avService = async (req, res, next) => {
         */
         // Optimize join using a Map for faster lookups
         const userMap = new Map(rows_219.map(b => [b.unique_id, b]));
-        const joined = rows_243.map(a => ({
-          ...a,
-          ...(userMap.get(a.u_id) || {})
-        }));
+        const joined = rows_243.map(a => {
+            const { unique_id, ...restUser } = userMap.get(a.u_id) || {};
+            return {
+              ...a,
+              ...restUser
+            };
+          });
 
         // Calculate query time
         const end_time = new Date();
