@@ -29,7 +29,7 @@ const avService = async (req, res, next) => {
         }
         // Fetch data from both databases
         const [rows_243] = await db_243.query("SELECT `tbl_log`.`l_id`,`tbl_log`.`u_id`,`tbl_log`.`i_id`,`tbl_item`.`i_name`,`tbl_log`.`t_id`,`tbl_type`.`t_name`,`tbl_log`.`timestamp` FROM `tbl_log` LEFT JOIN `tbl_item` ON `tbl_log`.`i_id` = `tbl_item`.`i_id` LEFT JOIN `tbl_type` ON `tbl_log`.`t_id` = `tbl_type`.`t_id` WHERE `e_id` = 'borrow';");
-        const [rows_219] = await db_219.query("SELECT `unique_id`, `name_th`, `lname_th`, `role`, `faculty_th` FROM `users`;");
+        const [rows_219] = await db_219.query("SELECT `unique_id`, `name_th`, `lname_th`, `role`, `faculty_th`, IF(`role` = 'นิสิต',`student_status`, `employee_status_th`) AS `status` FROM `users`;");
         //res.json(rows_243);
         /*
         const joined = rows_243.map(a => {
@@ -67,8 +67,8 @@ const avService = async (req, res, next) => {
         res.status(500).json({ error: "Internal Server Error" });
     }finally{
         // Ensure connections are released back to the pool
-        await db_243.end();
-        await db_219.end();
+        //await db_243.end();
+        //await db_219.end();
     }
 }
 
