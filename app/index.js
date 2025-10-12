@@ -19,6 +19,7 @@ app.use('/passport-id-check', passportIdCheck);
 import avService from '../routes/avservice.js';
 app.use('/avservice', avService);
 
-
+import gate from '../routes/gate.js';
+app.use('/gate', gate);
 
 export { app };
