@@ -86,16 +86,23 @@ const citizenIDCheck = async (req, res, next) => {
             })
             return;
         }
+        if(!inputs.visitor_type){
+            res.status(400).json({
+                'message' : 'No Visitor Type input'
+            })
+            return;
+        }
+
         const find_query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
         const [result_find, fields_find] = await mysql_con.execute(find_query, [inputs.citizen_id])
         // If visitor does not exist, register them
         if(result_find.length === 0){
-            const query = 'INSERT INTO visitors (visitor_id, phone_number) VALUES (?, ?);';
-            await mysql_con.execute(query, [inputs.citizen_id, inputs.phone_number]);
+            const query = 'INSERT INTO visitors (visitor_id, phone_number, visitor_type) VALUES (?, ?, ?);';
+            await mysql_con.execute(query, [inputs.citizen_id, inputs.phone_number, inputs.visitor_type]);
         }
         if(result_find[0].phone_number !== inputs.phone_number){
-            const query = 'UPDATE visitors SET phone_number = ? WHERE visitor_id = ?;';
-            await mysql_con.execute(query, [inputs.phone_number, inputs.citizen_id]);
+            const query = 'UPDATE visitors SET phone_number = ?, visitor_type = ? WHERE visitor_id = ?;';
+            await mysql_con.execute(query, [inputs.phone_number, inputs.visitor_type, inputs.citizen_id]);
         }
         // Sign in visitor
         const query_sign_in = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
