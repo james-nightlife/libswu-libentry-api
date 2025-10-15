@@ -64,18 +64,25 @@ const passportIDCheck = async (req, res, next) => {
                 return;
             }
 
+            if(!inputs.visitor_area){
+                res.status(400).json({
+                    'message' : 'No Visitor Area input'
+                })
+                return;
+            }      
+
             const find_query = 'SELECT * FROM visitors WHERE visitor_id = ?;';
             const [result, fields] = await mysql_con.execute(find_query, [inputs.passport_id])
             // If visitor does not exist, register them
             if(result.length === 0){
                 // Register visitor
-                const query = 'INSERT INTO visitors (visitor_id, phone_number, visitor_type) VALUES (?, ?, ?);';
-                await mysql_con.execute(query, [inputs.passport_id, inputs.phone_number, inputs.visitor_type]);
+                const query = 'INSERT INTO visitors (visitor_id, phone_number, visitor_type, visitor_area) VALUES (?, ?, ?, ?);';
+                await mysql_con.execute(query, [inputs.passport_id, inputs.phone_number, inputs.visitor_type, inputs.visitor_area]);
             }
-            if(result[0].phone_number !== inputs.phone_number){
+            if(result[0].phone_number !== inputs.phone_number || result[0].visitor_type !== inputs.visitor_type || result[0].visitor_area !== inputs.visitor_area){
                 // Update phone number
-                const query = 'UPDATE visitors SET phone_number = ?, visitor_type = ? WHERE visitor_id = ?;';
-                await mysql_con.execute(query, [inputs.phone_number, inputs.visitor_type, inputs.passport_id]);
+                const query = 'UPDATE visitors SET phone_number = ?, visitor_type = ?, visitor_area = ?, update_date = NOW() WHERE visitor_id = ?;';
+                await mysql_con.execute(query, [inputs.phone_number, inputs.visitor_type, inputs.visitor_area, inputs.passport_id]);
             }
             // Sign in visitor
             const query = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
