@@ -22,4 +22,7 @@ app.use('/avservice', avService);
 import gate from '../routes/gate.js';
 app.use('/gate', gate);
 
+import auth from '../routes/auth.js';
+app.use('/auth', auth);
+
 export { app };
