@@ -1,0 +1,63 @@
+networks:
+  my_custom_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  mongodb_data:
+  wordpress_data:
+
+services:
+  libswu_mysql:
+    image: mysql:lts
+    container_name: libswu_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: libswu
+      MYSQL_USER: username
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - my_custom_network
+  libswu_mongodb:
+    image: mongo:latest
+    container_name: libswu_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: username
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - my_custom_network
+  libswu_wordpress:
+    image: wordpress:latest
+    container_name: libswu_wordpress
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: libswu_mysql:3306
+      WORDPRESS_DB_USER: username
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: libswu
+    ports:
+      - "3002:80"
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - my_custom_network
+  libswu_libentry_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: libswu_libentry_api
+    restart: always
+    ports:
+      - "3001:3001"
+    networks:
+      - my_custom_network
