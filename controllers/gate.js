@@ -1,17 +1,14 @@
 const getGateUser = async (req, res, next) => {
-    // Measure processing time
+    var response = {};
     const start_time = performance.now();
 
     // Validate query parameters
     if(Object.keys(req.query).length === 0 || !req.query.userid){
-        return res.status(400).json({ error: "Bad Request" });
+        throw new Error('Missing required fields');
     }
     const input = req.query;
+    
     try{
-        // Only allow GET requests
-        if (req.method !== 'GET') {
-            return res.status(405).json({ error: "Method Not Allowed" });
-        }
         const session = await fetch(`${process.env.GATE_API_URL}/v1/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -67,15 +64,17 @@ const getGateUser = async (req, res, next) => {
         const user = userlist.find(u => u.UniqueID === input.userid);
         // If user not found, return 404
         if(!user){
-            return res.status(404).json({ error: "User not found" });
+            throw new Error('User not found');
         }
         const processing_time = performance.now() - start_time;
         //console.log(`Processing time: ${processing_time} ms`);
-        res.status(200).json({ processing_time, user });
+        response = { 
+            processing_time, 
+            user 
+        };
+        res.json(response);
     }catch(error){
-        console.error("Error in Get Gate User:", error);
-        res.status(500).json({ error: error.message || "Internal Server Error" });
-    }finally{
+        next(error);
     }
 }
 

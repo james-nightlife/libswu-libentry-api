@@ -1,24 +1,13 @@
-import mysql from "mysql2/promise";
-
-// Connection pools for both DB servers
-const db_243 = mysql.createPool({
-    host: process.env.MYSQL_HOST_243,
-    user: process.env.MYSQL_USERNAME_243,
-    password: process.env.MYSQL_PASSWORD_243,
-    database: process.env.MYSQL_DATABASE_243
-});
-  
-const db_219 = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USERNAME,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
-});
+import { db_243, db_219 } from '../config/db.js';
 
 const avService = async (req, res, next) => {
+    var response = {};
     // Start time for query performance measurement
     const start_time = new Date();
     try{
+        if(process.env.API_SCOPE !== 'internal'){
+            throw new Error("Unauthorized Access");
+        }
         // Ensure connections are established
         if (!db_243 || !db_219) {
             throw new Error("Database connection not established");
@@ -53,22 +42,18 @@ const avService = async (req, res, next) => {
         // Calculate query time
         const end_time = new Date();
         const time_diff = (end_time - start_time)/1000; // in seconds
-        // Send response
-        res.json({
+
+        response = {
             success: true,
             query_time: time_diff,
             length: joined.length,
             data: joined
-        });
+        }
+        // Send response
+        res.json(response);
 
     }catch(error){
-        // Handle errors
-        console.error("Error in AV Service:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }finally{
-        // Ensure connections are released back to the pool
-        //await db_243.end();
-        //await db_219.end();
+        next(error);
     }
 }
 

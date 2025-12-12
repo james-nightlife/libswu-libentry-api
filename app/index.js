@@ -1,28 +1,46 @@
 
 import express from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
+import getStudent from '../routes/get-student.js';
+import avService from '../routes/avservice.js';
+import gate from '../routes/gate.js';
+import auth from '../routes/auth.js';
+import users from '../routes/users.js';
+import visitors from '../routes/visitors.js';
+//import passportIdCheck from '../routes/passport-id-check.js';
+//import citizenIdCheck from '../routes/citizen-id-check.js';
 
 const app = express();
+
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-import getStudent from '../routes/get-student.js';
-app.use('/get-student', getStudent);
-
-import citizenIdCheck from '../routes/citizen-id-check.js';
+/** 
 app.use('/citizen-id-check', citizenIdCheck);
-
-import passportIdCheck from '../routes/passport-id-check.js';
 app.use('/passport-id-check', passportIdCheck);
+*/
 
-import avService from '../routes/avservice.js';
+app.use('/get-student', getStudent);
 app.use('/avservice', avService);
-
-import gate from '../routes/gate.js';
 app.use('/gate', gate);
-
-import auth from '../routes/auth.js';
 app.use('/auth', auth);
+app.use('/users', users);
+app.use('/visitors', visitors);
+
+app.use((req, res) => {
+    res.status(404).json({
+        status: 'Error',
+        message: 'Endpoint not found'
+    });
+});
+
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        status: 'Error',
+        message: err.message || 'Internal Server Error'
+    });
+});
 
 export { app };
