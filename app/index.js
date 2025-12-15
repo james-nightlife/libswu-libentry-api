@@ -16,10 +16,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/** 
 app.use('/citizen-id-check', citizenIdCheck);
 app.use('/passport-id-check', passportIdCheck);
-*/
 
 app.use('/get-student', getStudent);
 app.use('/avservice', avService);
