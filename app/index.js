@@ -7,8 +7,8 @@ import gate from '../routes/gate.js';
 import auth from '../routes/auth.js';
 import users from '../routes/users.js';
 import visitors from '../routes/visitors.js';
-//import passportIdCheck from '../routes/passport-id-check.js';
-//import citizenIdCheck from '../routes/citizen-id-check.js';
+import passportIdCheck from '../routes/passport-id-check.js';
+import citizenIdCheck from '../routes/citizen-id-check.js';
 
 const app = express();
 
