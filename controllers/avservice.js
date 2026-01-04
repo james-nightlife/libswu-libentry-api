@@ -5,7 +5,9 @@ const avService = async (req, res, next) => {
     // Start time for query performance measurement
     const start_time = new Date();
     try{
-        if(process.env.API_SCOPE !== 'internal'){
+        const ip = req.ip.replace('::ffff:', '');
+
+        if(!(ip.startsWith('10.') || (ip === '::1'))){
             throw new Error("Unauthorized Access");
         }
         // Ensure connections are established

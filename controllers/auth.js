@@ -28,7 +28,7 @@ const authenticateUser = async (req, res, next) => {
             iat: Math.floor(Date.now() / 1000),
         }
 
-        const SECRET = "USER_SECRET_KEY";
+        const SECRET = process.env.JWT_SECRET;
         const token = jwt.sign(payload, SECRET, { expiresIn: '3h' });
 
         response = {

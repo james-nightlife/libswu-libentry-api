@@ -1,4 +1,4 @@
-import { mysql_con } from '../config/db.js';
+import { mysql_visitor as mysql_con } from '../config/db.js' ;
 
 const addVisitor = async (req, res, next) => {
     let responseData =  {

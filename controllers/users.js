@@ -13,11 +13,13 @@ const getUsers = async (req, res, next) => {
             throw new Error('Missing required fields');
         }
 
+        /** 
         if(!inputs.auth_token){
             throw new Error('Missing auth_token');
         }   
 
-        jwt.verify(inputs.auth_token, "USER_SECRET_KEY");
+        jwt.verify(inputs.auth_token, process.env.JWT_SECRET);
+        */
 
         const query = 'SELECT unique_id, name_th, lname_th FROM users WHERE buasri_id = ? AND (employee_status_th = "ปฎิบัติราชการปกติ" OR student_status = "นิสิตปัจจุบัน");';
         const [result, fields] = await mysql_con.execute(query, [inputs.buasri_id])

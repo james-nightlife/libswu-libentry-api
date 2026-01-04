@@ -2,13 +2,19 @@ const getGateUser = async (req, res, next) => {
     var response = {};
     const start_time = performance.now();
 
-    // Validate query parameters
-    if(Object.keys(req.query).length === 0 || !req.query.userid){
-        throw new Error('Missing required fields');
-    }
-    const input = req.query;
-    
     try{
+        const ip = req.ip.replace('::ffff:', '');
+
+        if(!(ip.startsWith('10.') || (ip === '::1'))){
+            throw new Error("Unauthorized Access");
+        }
+
+        // Validate query parameters
+        if(Object.keys(req.query).length === 0 || !req.query.userid){
+            throw new Error('Missing required fields');
+        }
+        const input = req.query;
+
         const session = await fetch(`${process.env.GATE_API_URL}/v1/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
