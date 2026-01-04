@@ -1,17 +1,8 @@
 import mysql from "mysql2/promise";
 
-const mysql_con_config = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USERNAME,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
-}
+import { mysql_visitor as mysql_con} from "../config/db.js";
 
 const passportIDCheck = async (req, res, next) => {
-    const mysql_con = await mysql.createConnection({
-            ...mysql_con_config,
-        })
     
         try{
             if(req.method !== 'POST'){
@@ -98,7 +89,6 @@ const passportIDCheck = async (req, res, next) => {
             return;
         }
         finally{
-            mysql_con.end();
         }
 }
 
