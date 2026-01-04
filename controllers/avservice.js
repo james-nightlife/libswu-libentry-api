@@ -5,6 +5,7 @@ const avService = async (req, res, next) => {
     // Start time for query performance measurement
     const start_time = new Date();
     try{
+        console.log(req.ip)
         const ip = req.ip.replace('::ffff:', '');
 
         if(!(ip.startsWith('10.') || (ip === '::1'))){
