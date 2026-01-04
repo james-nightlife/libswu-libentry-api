@@ -15,7 +15,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('trust proxy', true);
 
 app.use('/citizen-id-check', citizenIdCheck);
 app.use('/passport-id-check', passportIdCheck);
