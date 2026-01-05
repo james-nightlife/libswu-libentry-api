@@ -95,14 +95,16 @@ const citizenIDCheck = async (req, res, next) => {
         const [result_find, fields_find] = await mysql_con.execute(find_query, [inputs.citizen_id])
         // If visitor does not exist, register them
         if(result_find.length === 0){
+            //console.log("Registering new visitor");
             const query = 'INSERT INTO visitors (visitor_id, phone_number, visitor_type, visitor_area) VALUES (?, ?, ?, ?);';
             await mysql_con.execute(query, [inputs.citizen_id, inputs.phone_number, inputs.visitor_type, inputs.visitor_area]);
-        }
-        if(result_find[0].phone_number !== inputs.phone_number || result_find[0].visitor_type !== inputs.visitor_type || result_find[0].visitor_area !== inputs.visitor_area){
+        }else if(result_find[0].phone_number !== inputs.phone_number || result_find[0].visitor_type !== inputs.visitor_type || result_find[0].visitor_area !== inputs.visitor_area){
+            //console.log("Updating visitor info");
             const query = 'UPDATE visitors SET phone_number = ?, visitor_type = ?, visitor_area = ?, update_date = NOW() WHERE visitor_id = ?;';
             await mysql_con.execute(query, [inputs.phone_number, inputs.visitor_type, inputs.visitor_area, inputs.citizen_id]);
         }
         // Sign in visitor
+        //console.log("Signing in visitor");
         const query_sign_in = 'INSERT INTO visitors_sign_in (visitor_id) VALUES (?);';
         await mysql_con.execute(query_sign_in, [inputs.citizen_id]);
         res.json({
