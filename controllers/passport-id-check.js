@@ -69,8 +69,7 @@ const passportIDCheck = async (req, res, next) => {
                 // Register visitor
                 const query = 'INSERT INTO visitors (visitor_id, phone_number, visitor_type, visitor_area) VALUES (?, ?, ?, ?);';
                 await mysql_con.execute(query, [inputs.passport_id, inputs.phone_number, inputs.visitor_type, inputs.visitor_area]);
-            }
-            if(result[0].phone_number !== inputs.phone_number || result[0].visitor_type !== inputs.visitor_type || result[0].visitor_area !== inputs.visitor_area){
+            }else if(result[0].phone_number !== inputs.phone_number || result[0].visitor_type !== inputs.visitor_type || result[0].visitor_area !== inputs.visitor_area){
                 // Update phone number
                 const query = 'UPDATE visitors SET phone_number = ?, visitor_type = ?, visitor_area = ?, update_date = NOW() WHERE visitor_id = ?;';
                 await mysql_con.execute(query, [inputs.phone_number, inputs.visitor_type, inputs.visitor_area, inputs.passport_id]);
