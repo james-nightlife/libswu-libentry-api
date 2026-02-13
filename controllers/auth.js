@@ -31,7 +31,7 @@ const authenticateUser = async (req, res, next) => {
 
     /* Try to bind to LDAP server */
     try{
-        //await ldapClient.bind(uid, pwd);
+        await ldapClient.bind(uid, pwd);
         userData = await fetchUser(inputs.username);
     }catch(err){
         // If invalid credentials
