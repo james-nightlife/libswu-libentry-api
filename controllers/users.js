@@ -1,5 +1,6 @@
 import { mysql_con } from '../config/db.js';
 import jwt from 'jsonwebtoken'; 
+import { fetchUser } from '../services/fetch-user.js';
 
 const getUsers = async (req, res, next) => {
     var response = {};
@@ -35,4 +36,44 @@ const getUsers = async (req, res, next) => {
     }
 } 
 
-export { getUsers }
+const getMyInfo = async (req, res, next) => {
+        if (!req.headers['api-token']) {
+            res.status(401).json({
+                'message': 'Unauthorized: No token provided'
+            });
+            return;
+        }
+        const authHeader = req.headers['api-token'];
+        const decoded = jwt.verify(authHeader, process.env.JWT_SECRET);
+        let userData;
+    
+        if(!decoded || !decoded.username){
+            res.status(401).json({
+                'message': 'Unauthorized: Invalid token'
+            });
+            return;
+        }
+    
+        try{
+            userData = await fetchUser(decoded.username);
+    
+            if(!userData){
+                res.status(404).json({
+                    'message': 'User not found'
+                });
+                return;
+            }   
+            
+        }catch(err){
+            res.status(401).json({
+                'message': err.message
+            });
+        }
+        
+        res.status(200).json({
+            'message': 'Authorized',
+            'data': userData
+        });
+}
+
+export { getUsers, getMyInfo }
