@@ -4,60 +4,50 @@ import { fetchUser } from '../services/fetch-user.js';
 import { passwordSave } from '../services/password-save.js';
 import { passwordValidate } from '../services/password-validation.js';
 
-const authenticateUser = async (req, res, next) => {
-    // If no body
-    if (!req.body) {
-        res.status(400).json({
-            'message': 'Bad Request: No data provided'
-        });
-        return;
-    }
-    const inputs = req.body;
+export const authenticateUser = async (req, res, next) => {
+    const { username, password } = req.body;
     
-    // If missing username or password
-    if (!inputs.username || !inputs.password) {
-        res.status(400).json({
-            'message': 'Bad Request: Missing username or password'
+    if (!username || !password) {
+        console.error('Authentication error: Missing username or password');
+        return res.status(400).json({
+            message: 'Bad Request: Missing username or password'
         });
-        return;
     }
 
-    let uid = `uid=${inputs.username}, dc=swu, dc=ac, dc=th`;
-    let pwd = inputs.password;
+    let uid = `uid=${username}, dc=swu, dc=ac, dc=th`;
+    let pwd = password;
     const ldapClient = ldap.createClient({
         url: "ldap://ldap.swu.ac.th",
     });
-    
-    /* Try to bind to LDAP server */
-    try{
-        await ldapClient.bind(uid, pwd);
-        await passwordSave(inputs.username, inputs.password);
-    }catch(err){
-        // If invalid credentials
-        if(err instanceof ldap.InvalidCredentialsError){
-            res.status(401).json({
+
+    ldapClient.on('error', async (err) => {
+        console.error('LDAP connection error:', err);
+        const isValid = await passwordValidate(username, password);
+        if (!isValid) {
+            return res.status(401).json({
                 'message': 'Unauthorized: Invalid username or password'
             });
-            return;
-        }else if(err instanceof ldap){
-            const isValid = await passwordValidate(inputs.username, inputs.password);
-            if (!isValid) {
-                res.status(401).json({
-                    'message': 'Unauthorized: Invalid username or password'
-                });
-                return;
-            }
-        }else{
-            console.error('LDAP error:', err);
-            res.status(500).json({
-                'message': err.message
+        }
+    });
+    
+    try{
+        await ldapClient.bind(uid, pwd);
+        await passwordSave(username, password);
+    }catch(err){
+        console.error('LDAP authentication error:', err);
+        if (err instanceof ldap.InvalidCredentialsError) {
+            return res.status(401).json({
+                'message': 'Unauthorized: Invalid username or password'
             });
-            return;
+        }else{
+            return res.status(500).json({
+                'message': 'Internal Server Error: LDAP authentication failed'
+            });
         }
     }
 
     const payload = {
-        username: inputs.username
+        username: username
     }
 
     const SECRET = process.env.JWT_SECRET;
@@ -68,44 +58,27 @@ const authenticateUser = async (req, res, next) => {
     });
 }
 
-const authCheck = async (req, res, next) => {
-    if (!req.headers['api-token']) {
-        res.status(401).json({
-            'message': 'Unauthorized: No token provided'
-        });
-        return;
-    }
-    const authHeader = req.headers['api-token'];
-    const decoded = jwt.verify(authHeader, process.env.JWT_SECRET);
-    let userData;
+export const authCheck = async (req, res, next) => {
+    const { token } = req.body;
 
-    if(!decoded || !decoded.username){
-        res.status(401).json({
+    if(!token){
+        return res.status(400).json({
+            'message': 'Bad Request: Missing token'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Decoded JWT payload:', decoded);
+        return res.status(200).json({
+            'message': 'Authorized',
+            'data': decoded
+        });
+
+    }catch(err){
+        console.error('JWT verification error:', err);
+        return res.status(401).json({
             'message': 'Unauthorized: Invalid token'
         });
-        return;
     }
-
-    try{
-        userData = await fetchUser(decoded.username);
-
-        if(!userData){
-            res.status(404).json({
-                'message': 'User not found'
-            });
-            return;
-        }   
-        
-    }catch(err){
-        res.status(401).json({
-            'message': err.message
-        });
-    }
-    
-    res.status(200).json({
-        'message': 'Authorized',
-        'data': userData
-    });
 }
-
-export { authenticateUser, authCheck };
