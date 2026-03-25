@@ -35,7 +35,7 @@ export const authenticateUser = async (req, res, next) => {
         await passwordSave(username, password);
     }catch(err){
         console.error('LDAP authentication error:', err);
-        if (err instanceof ldap.InvalidCredentialsError) {
+        if (err.name === 'InvalidCredentialsError') {
             return res.status(401).json({
                 'message': 'Unauthorized: Invalid username or password'
             });
@@ -59,26 +59,9 @@ export const authenticateUser = async (req, res, next) => {
 }
 
 export const authCheck = async (req, res, next) => {
-    const { token } = req.body;
-
-    if(!token){
-        return res.status(400).json({
-            'message': 'Bad Request: Missing token'
-        });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('Decoded JWT payload:', decoded);
-        return res.status(200).json({
-            'message': 'Authorized',
-            'data': decoded
-        });
-
-    }catch(err){
-        console.error('JWT verification error:', err);
-        return res.status(401).json({
-            'message': 'Unauthorized: Invalid token'
-        });
-    }
+    const { decoded } = req.body;
+    console.log(decoded)
+    return res.json({
+        message: 'Authenticated successfully'
+    });
 }

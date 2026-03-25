@@ -17,15 +17,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('trust proxy', 1);
 
+// Deploying routes
 app.use('/citizen-id-check', citizenIdCheck);
 app.use('/passport-id-check', passportIdCheck);
-
 app.use('/get-student', getStudent);
 app.use('/avservice', avService);
-app.use('/gate', gate);
+
+
+// New routes
 app.use('/auth', auth);
 app.use('/users', users);
 app.use('/visitors', visitors);
+
+app.use('/gate', gate);
+
+
+
 
 app.use((req, res) => {
     res.status(404).json({

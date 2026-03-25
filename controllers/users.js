@@ -3,77 +3,54 @@ import jwt from 'jsonwebtoken';
 import { fetchUser } from '../services/fetch-user.js';
 
 const getUsers = async (req, res, next) => {
-    var response = {};
+    var { buasri_id, decoded } = req.params;
+
     try{
-        if(!req.body){
-            throw new Error('No Body');
+        if(!buasri_id){
+            const allUsersQuery = 'SELECT unique_id, name_th, lname_th FROM users WHERE employee_status_th = "ปฎิบัติราชการปกติ" OR student_status = "นิสิตปัจจุบัน";';
+            const [result, fields] = await mysql_con.execute(allUsersQuery);
+            return res.status(200).json({
+                result : result
+            });
         }
-        const inputs = req.body;
-
-        if(!inputs.buasri_id){
-            throw new Error('Missing required fields');
-        }
-
-        /** 
-        if(!inputs.auth_token){
-            throw new Error('Missing auth_token');
-        }   
-
-        jwt.verify(inputs.auth_token, process.env.JWT_SECRET);
-        */
 
         const query = 'SELECT unique_id, name_th, lname_th FROM users WHERE buasri_id = ? AND (employee_status_th = "ปฎิบัติราชการปกติ" OR student_status = "นิสิตปัจจุบัน");';
-        const [result, fields] = await mysql_con.execute(query, [inputs.buasri_id])
+        const [result, fields] = await mysql_con.execute(query, [buasri_id])
         if(result.length === 0){
-            throw new Error('No user found');
+            return res.status(404).json({
+                message: 'User not found'
+            });
         }
-        response = {
-            result : result
-        };
-        res.json(response)
+        return res.status(200).json({
+                result : result
+        });
     }catch(e){
-        next(e);
+        return res.status(500).json({
+            message: e.message
+        });
     }
 } 
 
 const getMyInfo = async (req, res, next) => {
-        if (!req.headers['api-token']) {
-            res.status(401).json({
-                'message': 'Unauthorized: No token provided'
-            });
-            return;
-        }
-        const authHeader = req.headers['api-token'];
-        const decoded = jwt.verify(authHeader, process.env.JWT_SECRET);
-        let userData;
-    
-        if(!decoded || !decoded.username){
-            res.status(401).json({
-                'message': 'Unauthorized: Invalid token'
-            });
-            return;
-        }
-    
-        try{
-            userData = await fetchUser(decoded.username);
-    
-            if(!userData){
-                res.status(404).json({
-                    'message': 'User not found'
-                });
-                return;
-            }   
-            
-        }catch(err){
-            res.status(401).json({
-                'message': err.message
+    const { decoded } = req.body;
+
+    try{
+        const query = 'SELECT unique_id, name_th, lname_th FROM users WHERE buasri_id = ? AND (employee_status_th = "ปฎิบัติราชการปกติ" OR student_status = "นิสิตปัจจุบัน");';
+        const [result, fields] = await mysql_con.execute(query, [decoded.username])
+        if(result.length === 0){
+            return res.status(404).json({
+                message: 'User not found'
             });
         }
-        
-        res.status(200).json({
-            'message': 'Authorized',
-            'data': userData
+        return res.status(200).json({
+                result : result
         });
+
+    }catch(e){
+        return res.status(500).json({
+            message: e.message
+        });
+    }
 }
 
 export { getUsers, getMyInfo }
