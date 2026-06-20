@@ -1,13 +1,13 @@
-import ldap from 'ldapjs-promise'  
 import jwt from 'jsonwebtoken'; 
 import { fetchUser } from '../services/fetch-user.js';
 import { passwordSave } from '../services/password-save.js';
 import { passwordValidate } from '../services/password-validation.js';
+import { authenticate } from 'ldap-authentication';
 
 export const authenticateUser = async (req, res, next) => {
     const { username, password } = req.body;
     
-    if (!username || !password) {
+    if (!username || !password) { // Check if username or password is missing
         console.error('Authentication error: Missing username or password');
         return res.status(400).json({
             message: 'Bad Request: Missing username or password'
@@ -16,32 +16,28 @@ export const authenticateUser = async (req, res, next) => {
 
     let uid = `uid=${username}, dc=swu, dc=ac, dc=th`;
     let pwd = password;
-    const ldapClient = ldap.createClient({
-        url: "ldap://ldap.swu.ac.th",
-    });
 
-    ldapClient.on('error', async (err) => {
-        console.error('LDAP connection error:', err);
-        const isValid = await passwordValidate(username, password);
-        if (!isValid) {
-            return res.status(401).json({
-                'message': 'Unauthorized: Invalid username or password'
-            });
-        }
-    });
-    
     try{
-        await ldapClient.bind(uid, pwd);
+        const authenticated = await authenticate({
+            ldapOpts: {
+                url: 'ldap://ldap.swu.ac.th',
+            },
+            userDn: uid,
+            userPassword: pwd,
+            attribute: [],
+        })
+        console.log('LDAP authentication successful:', authenticated);
         await passwordSave(username, password);
     }catch(err){
-        console.error('LDAP authentication error:', err);
-        if (err.name === 'InvalidCredentialsError') {
+        if(err.name === 'LdapAuthenticationError' && err.message === ' Code: 0x31') { // LDAP authentication failed due to invalid credentials
             return res.status(401).json({
-                'message': 'Unauthorized: Invalid username or password'
+                message: 'Unauthorized: Invalid username or password'
             });
-        }else{
-            return res.status(500).json({
-                'message': 'Internal Server Error: LDAP authentication failed'
+        }
+        const isValid = await passwordValidate(username, password); // Check if the provided credentials are valid in the local database
+        if (!isValid) {
+            return res.status(401).json({
+                message: 'Unauthorized: Invalid username or password'
             });
         }
     }
