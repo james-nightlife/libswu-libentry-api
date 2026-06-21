@@ -3,9 +3,10 @@ import { fetchUser } from '../services/fetch-user.js';
 import { passwordSave } from '../services/password-save.js';
 import { passwordValidate } from '../services/password-validation.js';
 import { authenticate } from 'ldap-authentication';
+import { gateValidation } from '../services/gateValidation.js';
 
 export const authenticateUser = async (req, res, next) => {
-    const { username, password } = req.body;
+    const { username, password, service } = req.body;
     
     if (!username || !password) { // Check if username or password is missing
         console.error('Authentication error: Missing username or password');
@@ -26,7 +27,7 @@ export const authenticateUser = async (req, res, next) => {
             userPassword: pwd,
             attribute: [],
         })
-        console.log('LDAP authentication successful:', authenticated);
+        //console.log('LDAP authentication successful:', authenticated);
         await passwordSave(username, password);
     }catch(err){
         if(err.name === 'LdapAuthenticationError' && err.message === ' Code: 0x31') { // LDAP authentication failed due to invalid credentials
@@ -42,16 +43,24 @@ export const authenticateUser = async (req, res, next) => {
         }
     }
 
+    const response = {}
+
+    if(service === 'gate'){
+        const user = await fetchUser(username);
+        console.log("Fetched User:", user);
+        response.gate = await gateValidation(user);
+    }
+
     const payload = {
         username: username
     }
 
     const SECRET = process.env.JWT_SECRET;
     const token = jwt.sign(payload, SECRET, { expiresIn: '3h' });
+
+    response.token = token;
     
-    res.json({
-        token: token,
-    });
+    res.json(response);
 }
 
 export const authCheck = async (req, res, next) => {
