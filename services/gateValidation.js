@@ -112,7 +112,7 @@ export const gateValidation = async (user) => {
                     "ExpireDate": expireDate,
                     "Password": "",
                     "GroupCode": 1000,
-                    "AccessGroupCode": 1000,
+                    "AccessGroupCode": user.type === 'student' ? 1000 : 3000,
                     "UserType": 0,
                     "TimezoneCode": 0,
                     "BlackList": 0,
