@@ -31,6 +31,8 @@ export const fetchUser = async (username) => {
                 mname_en: student_filter[0].mname_en,
                 lname_en: student_filter[0].lname_en,
                 department_th: student_filter[0].major_th,
+                admission_date: student_filter[0].admission_date,
+                type: 'student'
             };
         }else{
             throw new Error('User not found');
@@ -62,6 +64,8 @@ export const fetchUser = async (username) => {
                 mname_en: active_response_filter[0].mname_en,
                 lname_en: active_response_filter[0].lname_en,
                 department_th: active_response_filter[0].department_th,
+                start_date: active_response_filter[0].start_date,
+                type: 'employee'
             };
         }else{
             const not_active_request = await fetch(`${process.env.SWU_API_URL}/EmployeeSwuNotActive/${username}`, {
@@ -92,6 +96,8 @@ export const fetchUser = async (username) => {
                     name_en: not_active_response_sorted[0].name_en, 
                     lname_en: not_active_response_sorted[0].lname_en,
                     department_th: not_active_response_sorted[0].department_th,
+                    start_date: not_active_response_sorted[0].start_date,
+                    type: 'employee'
                 };
             }else{
                 throw new Error('User not found');

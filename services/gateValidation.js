@@ -1,5 +1,14 @@
 export const gateValidation = async (user) => {
     try{
+
+        const now = new Date();
+        const createDate = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, 0)}-${(now.getDate()).toString().padStart(2, 0)} ${(now.getHours()).toString().padStart(2, 0)}:${(now.getMinutes()).toString().padStart(2, 0)}:${(now.getSeconds()).toString().padStart(2, 0)}`;
+        const startDate = user.type === 'student' ? user.admission_date : user.start_date || createDate;
+        const expireDate = user.type === 'student' ? `${parseInt(startDate.substring(0, 4)) - 543 + 4}-${startDate.substring(4, 6)}-${startDate.substring(6, 8)} 23:59:59` : `${parseInt(startDate.substring(0, 4)) - 543 + 42}-09-30 23:59:59`;
+        
+        console.log("Create Date:", createDate);
+        console.log("Start Date:", startDate);
+        console.log("Expire Date:", expireDate);
         // Login to the gate system
         const session = await fetch(
             `${process.env.GATE_API_URL}/v1/login`, 
@@ -73,7 +82,7 @@ export const gateValidation = async (user) => {
                 throw new Error(`Get user ID failed, result code: ${new_id_data.Result.ResultCode}`);
             }
 
-
+            
             // Create the user in the gate system using the new ID and user information
             const create_user = await fetch(`${process.env.GATE_API_URL}/v1/users?UserID=${new_id_data.dmUserInfo.ID}`, {
             method: 'POST',
@@ -97,10 +106,10 @@ export const gateValidation = async (user) => {
                     0
                     ],
                     "Privilege": 2,
-                    "CreateDate": "2026-06-01 00:00:00",
+                    "CreateDate": createDate,
                     "UsePeriodFlag": 0,
-                    "RegistDate": "2026-06-01 00:00:00",
-                    "ExpireDate": "2026-06-30 23:59:59",
+                    "RegistDate": createDate,
+                    "ExpireDate": expireDate,
                     "Password": "",
                     "GroupCode": 1000,
                     "AccessGroupCode": 1000,
