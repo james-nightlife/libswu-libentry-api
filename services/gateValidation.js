@@ -94,7 +94,7 @@ export const gateValidation = async (user) => {
                 "UserInfo": {
                     "ID": new_id_data.dmUserInfo.ID,
                     "UniqueID": user.user_id.toString(),
-                    "Name": `${user.name_th} ${user.lname_th}`,
+                    "Name": `${user.name_th || ''} ${user.mname_th || ''} ${user.lname_th || ''}`,
                     "AuthInfo": [
                     30,
                     2,
