@@ -47,7 +47,8 @@ export const authenticateUser = async (req, res, next) => {
 
     if(service === 'gate'){
         const user = await fetchUser(username);
-        console.log("Fetched User:", user);
+        //console.log("Fetched User:", user);
+        response.user = user;
         response.gate = await gateValidation(user);
     }
 

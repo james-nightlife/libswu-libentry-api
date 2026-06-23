@@ -22,9 +22,13 @@ export const fetchUser = async (username) => {
             return {
                 buasri_id: student_filter[0].buasri_id,
                 user_id: student_filter[0].student_id, 
+                prename_th: student_filter[0].prename_th,
                 name_th: student_filter[0].name_th, 
+                mname_th: student_filter[0].mname_th,
                 lname_th: student_filter[0].lname_th,
+                prename_en: student_filter[0].prename_en,
                 name_en: student_filter[0].name_en, 
+                mname_en: student_filter[0].mname_en,
                 lname_en: student_filter[0].lname_en,
                 department_th: student_filter[0].major_th,
             };
@@ -49,9 +53,13 @@ export const fetchUser = async (username) => {
             return {
                 buasri_id: active_response_filter[0].buasri_id,
                 user_id: active_response_filter[0].employee_id, 
+                prename_th: active_response_filter[0].prename_th,
+                mname_th: active_response_filter[0].mname_th,
                 name_th: active_response_filter[0].name_th, 
                 lname_th: active_response_filter[0].lname_th,
+                prename_en: active_response_filter[0].prename_en,
                 name_en: active_response_filter[0].name_en,
+                mname_en: active_response_filter[0].mname_en,
                 lname_en: active_response_filter[0].lname_en,
                 department_th: active_response_filter[0].department_th,
             };
@@ -75,11 +83,15 @@ export const fetchUser = async (username) => {
                 return {
                     buasri_id: not_active_response_sorted[0].buasri_id,
                     user_id: not_active_response_sorted[0].employee_id, 
+                    prename_th: not_active_response_sorted[0].prename_th,
+                    mname_th: not_active_response_sorted[0].mname_th,
                     name_th: not_active_response_sorted[0].name_th, 
                     lname_th: not_active_response_sorted[0].lname_th, 
+                    prename_en: not_active_response_sorted[0].prename_en,
+                    mname_en: not_active_response_sorted[0].mname_en,
                     name_en: not_active_response_sorted[0].name_en, 
                     lname_en: not_active_response_sorted[0].lname_en,
-                    department_th: active_response_filter[0].department_th,
+                    department_th: not_active_response_sorted[0].department_th,
                 };
             }else{
                 throw new Error('User not found');
