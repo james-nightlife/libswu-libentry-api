@@ -49,7 +49,7 @@ export const authenticateUser = async (req, res, next) => {
         const user = await fetchUser(username);
         //console.log("Fetched User:", user);
         response.user = user;
-        response.gate = await gateValidation(user);
+        //response.gate = await gateValidation(user);
     }
 
     const payload = {
