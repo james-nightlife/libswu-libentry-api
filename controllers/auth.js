@@ -52,6 +52,12 @@ export const authenticateUser = async (req, res, next) => {
         response.gate = await gateValidation(user);
     }
 
+    if(service === 'visitor_admin'){
+        if(['sutthiphong', 'isaya', 'siwapornc', 'nairat', 'songyot'].includes(username)){
+            response.role = 'admin';
+        }
+    }
+
     const payload = {
         username: username
     }

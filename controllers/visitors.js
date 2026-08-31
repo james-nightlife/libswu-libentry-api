@@ -104,3 +104,58 @@ export const getVisitors = async (req, res, next) => {
         });
     }
 }
+
+export const getVisitorById = async (req, res, next) => {
+    const { id } = req.params;
+
+    if(!id){
+        return res.status(400).json({
+            'message': 'กรุณาระบุ ID'
+        })
+    }
+
+    return res.status(501).json({
+        'message': ''
+    })
+}
+
+export const signInVisitor = async (req, res, next) => {
+    const { username, password } = req.body;
+
+    if(!username || !password) {
+        return res.status(400).json({
+            'message': 'กรุณาระบบชื่อผู้ใช้งานและรหัสผ่าน'
+        })
+    }
+
+    try{
+        const query = 'SELECT * FROM `visitors` WHERE `visitor_id`=? AND `phone_number`=?;';
+        const [result, fields] = await mysql_con.execute(query, [username, password]);
+        if(result.length !== 1){
+            return res.status(404).json({
+                'message': 'ไม่พบข้อมูล'
+            })
+        }
+        return res.status(200).json(result)
+    }catch(e){
+
+    }
+
+    return res.status(501).json({
+        'message': ''
+    })
+}
+
+export const addVisitorNew = async (req, res, next) => {
+    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname } = req.body;
+    
+    if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname){
+        return res.status(400).json({
+            'message': 'ข้อมูลไม่ครบถ้วน'
+        })
+    }
+
+    return res.status(501).json({
+        'message': ''
+    })
+}
