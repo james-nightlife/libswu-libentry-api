@@ -1,0 +1,5 @@
+$kind: http-request
+name: 'AV Service'
+method: GET
+url: '{{baseUrl}}/avservice'
+order: 15000

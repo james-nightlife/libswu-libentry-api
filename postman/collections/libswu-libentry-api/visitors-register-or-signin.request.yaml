@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Register Or Sign In Visitor'
+method: POST
+url: '{{baseUrl}}/visitors'
+order: 6000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "visitor_type": "1",
+      "visitor_area": "library",
+      "visitor_id": "1234567890121",
+      "visitor_phone_number": "0812345678"
+    }

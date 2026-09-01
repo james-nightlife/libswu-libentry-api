@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Passport ID Check'
+method: POST
+url: '{{baseUrl}}/passport-id-check'
+order: 17000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "passport_id": "AB123456",
+      "phone_number": "0812345678",
+      "visitor_type": "2",
+      "visitor_area": "library"
+    }

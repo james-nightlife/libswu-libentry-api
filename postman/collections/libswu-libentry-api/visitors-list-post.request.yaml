@@ -1,0 +1,14 @@
+$kind: http-request
+name: 'List Visitors (POST)'
+method: POST
+url: '{{baseUrl}}/visitors/get'
+order: 8000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {}

@@ -1,0 +1,5 @@
+$kind: http-request
+name: 'Get Gate User'
+method: GET
+url: '{{baseUrl}}/gate?userid={{userid}}'
+order: 13000

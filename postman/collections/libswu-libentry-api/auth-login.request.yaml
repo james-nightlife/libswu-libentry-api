@@ -1,0 +1,22 @@
+$kind: http-request
+name: Auth Login
+method: POST
+url: "{{baseUrl}}/auth?user="
+queryParams:
+  - key: user
+    value: ""
+    disabled: false
+    description: ""
+auth:
+  type: basic
+order: 1000
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "exampleuser",
+      "password": "examplepassword",
+      "service": "gate"
+    }

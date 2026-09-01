@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Visitor By ID'
+method: GET
+url: '{{baseUrl}}/visitors/:id'
+order: 9000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+pathVariables:
+  - key: id
+    value: '1'

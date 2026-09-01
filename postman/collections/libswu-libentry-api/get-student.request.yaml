@@ -1,0 +1,14 @@
+$kind: http-request
+name: 'Get Student'
+method: POST
+url: '{{baseUrl}}/get-student'
+order: 14000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "buasri_id": "exampleid"
+    }

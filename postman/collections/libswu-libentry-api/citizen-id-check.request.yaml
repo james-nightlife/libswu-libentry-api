@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Citizen ID Check'
+method: POST
+url: '{{baseUrl}}/citizen-id-check'
+order: 16000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "citizen_id": "1234567890121",
+      "phone_number": "0812345678",
+      "visitor_type": "1",
+      "visitor_area": "library"
+    }

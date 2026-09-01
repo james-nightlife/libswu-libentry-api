@@ -1,0 +1,5 @@
+$kind: collection
+name: 'libswu-libentry-api'
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3000'
