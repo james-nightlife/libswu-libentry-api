@@ -1,4 +1,5 @@
 import { mysql_visitor as mysql_con } from '../config/db.js' ;
+import { JWTEncode } from '../services/JWTEncode.js';
 
 export const addVisitor = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, visitor_phone_number } = req.body;
@@ -93,10 +94,7 @@ export const getVisitors = async (req, res, next) => {
     try{
         const query = 'SELECT visitor_id, phone_number, visitor_type, visitor_area, update_date FROM visitors;';
         const [result, fields] = await mysql_con.execute(query);
-        return res.status(200).json({
-            status: 'Success',
-            data: result
-        });
+        return res.status(200).json(result);
     }catch(error){
         res.status(500).json({
             status: 'Error',
@@ -110,13 +108,27 @@ export const getVisitorById = async (req, res, next) => {
 
     if(!id){
         return res.status(400).json({
-            'message': 'กรุณาระบุ ID'
+            message: 'กรุณาระบุ ID'
         })
     }
 
-    return res.status(501).json({
-        'message': ''
-    })
+    try{
+        const query = 'SELECT * FROM `visitors` WHERE `id`=?;';
+        const [result, fields] = await mysql_con.execute(query, [id]);
+        if(result.length !== 1){
+            return res.status(404).json({
+                message: 'Visitor not found'
+            })
+        }
+        return res.status(200).json({
+            message: 'Visitor found',
+            data: result[0]
+        })
+    }catch(error){
+        return res.status(500).json({
+        message: error.message || 'Internal Server Error'
+        })
+    }
 }
 
 export const signInVisitor = async (req, res, next) => {
@@ -124,7 +136,7 @@ export const signInVisitor = async (req, res, next) => {
 
     if(!username || !password) {
         return res.status(400).json({
-            'message': 'กรุณาระบบชื่อผู้ใช้งานและรหัสผ่าน'
+            'message': 'กรุณาระบุชื่อผู้ใช้งานและรหัสผ่าน'
         })
     }
 
@@ -133,29 +145,71 @@ export const signInVisitor = async (req, res, next) => {
         const [result, fields] = await mysql_con.execute(query, [username, password]);
         if(result.length !== 1){
             return res.status(404).json({
-                'message': 'ไม่พบข้อมูล'
+                message: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
             })
         }
-        return res.status(200).json(result)
+        const token = JWTEncode({ visitor_id: result[0].visitor_id });
+        return res.status(200).json({ 
+            token,
+            visitor_id: result[0].visitor_id,
+            firstname: result[0].firstname,
+            lastname: result[0].lastname,
+            filename: result[0].filename,
+            status: result[0].status,
+        });
     }catch(e){
 
     }
 
     return res.status(501).json({
-        'message': ''
+        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้'
     })
 }
 
 export const addVisitorNew = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname } = req.body;
     
-    if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname){
+    if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !req.file){
         return res.status(400).json({
-            'message': 'ข้อมูลไม่ครบถ้วน'
+            message: 'ข้อมูลไม่ครบถ้วน'
         })
     }
 
+
+
     return res.status(501).json({
-        'message': ''
+        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้',
+        input: {
+            visitor_type, 
+            visitor_area,
+            visitor_id,
+            phone_number,
+            firstname,
+            lastname,
+            filename: req.file.filename
+        }
+    })
+}
+
+export const editVisitor = async (req, res, next) => {
+    const { id } = req.params;
+    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, status } = req.body;
+    if(!id || !visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !status){
+        return res.status(400).json({
+            message: 'ข้อมูลไม่ครบถ้วน'
+        })
+    }
+    return res.status(501).json({
+        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถแก้ไขได้',
+        input: {
+            id,
+            visitor_type,
+            visitor_area,
+            visitor_id,
+            phone_number,
+            firstname,
+            lastname,
+            status
+        }
     })
 }
