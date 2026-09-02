@@ -1,5 +1,8 @@
 import { mysql_visitor as mysql_con } from '../config/db.js' ;
 import { JWTEncode } from '../services/JWTEncode.js';
+import { validateVisitorID } from '../services/validateVisitorID.js';
+import { validateVisitorPhoneNumber } from '../services/validateVisitorPhoneNumber.js';
+import fs from 'fs';
 
 export const addVisitor = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, visitor_phone_number } = req.body;
@@ -103,6 +106,18 @@ export const getVisitors = async (req, res, next) => {
     }
 }
 
+export const getVisitorsNew = async (req, res, next) => {
+    try{
+        const query = 'SELECT * FROM visitors;';
+        const [result, fields] = await mysql_con.execute(query);
+        return res.status(200).json(result);
+    }catch(error){
+        return res.status(500).json({
+            message: error.message || 'Internal Server Error'
+        });
+    }
+}
+
 export const getVisitorById = async (req, res, next) => {
     const { id } = req.params;
 
@@ -120,15 +135,65 @@ export const getVisitorById = async (req, res, next) => {
                 message: 'Visitor not found'
             })
         }
-        return res.status(200).json({
-            message: 'Visitor found',
-            data: result[0]
-        })
+        return res.status(200).json(result[0]);
     }catch(error){
         return res.status(500).json({
         message: error.message || 'Internal Server Error'
         })
     }
+}
+
+export const addVisitorNew = async (req, res, next) => {
+    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname } = req.body;
+    
+    if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !req.file){
+        // Delete the file if it was uploaded to disk
+        if (req.file && req.file.path) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error('Failed to delete orphaned file:', err);
+            });
+        }
+        return res.status(400).json({
+            message: 'ข้อมูลไม่ครบถ้วน'
+        })
+    }
+
+    try{
+        await validateVisitorID(visitor_id, visitor_type);
+        await validateVisitorPhoneNumber(phone_number);
+        const query = 'INSERT INTO `visitors` (visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, filename) VALUES (?, ?, ?, ?, ?, ?, ?);';
+        const [result, fields] = await mysql_con.execute(query, [visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, req.file.filename]);
+        if(result.affectedRows !== 1){
+            throw new Error('Failed to insert visitor into database');
+        }
+        return res.status(201).json({
+            message: 'Visitor added successfully'
+        });
+    }catch(error){
+        // Delete the file if it was uploaded to disk
+        if (req.file && req.file.path) {
+        fs.unlink(req.file.path, (err) => {
+            if (err) console.error('Failed to delete orphaned file:', err);
+        });
+        }
+
+        return res.status(500).json({
+            message: error.message || 'Internal Server Error'
+        })
+    }
+
+    return res.status(501).json({
+        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้',
+        input: {
+            visitor_type, 
+            visitor_area,
+            visitor_id,
+            phone_number,
+            firstname,
+            lastname,
+            filename: req.file.filename
+        }
+    })
 }
 
 export const signInVisitor = async (req, res, next) => {
@@ -163,31 +228,6 @@ export const signInVisitor = async (req, res, next) => {
 
     return res.status(501).json({
         message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้'
-    })
-}
-
-export const addVisitorNew = async (req, res, next) => {
-    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname } = req.body;
-    
-    if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !req.file){
-        return res.status(400).json({
-            message: 'ข้อมูลไม่ครบถ้วน'
-        })
-    }
-
-
-
-    return res.status(501).json({
-        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้',
-        input: {
-            visitor_type, 
-            visitor_area,
-            visitor_id,
-            phone_number,
-            firstname,
-            lastname,
-            filename: req.file.filename
-        }
     })
 }
 
