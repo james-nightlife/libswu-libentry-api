@@ -9,6 +9,9 @@ queryParams:
     description: ""
 auth:
   type: basic
+  credentials:
+    username: sc661010569
+    password: sc161622
 order: 1000
 headers:
   Content-Type: application/json
