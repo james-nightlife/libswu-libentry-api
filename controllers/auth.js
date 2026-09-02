@@ -53,9 +53,12 @@ export const authenticateUser = async (req, res, next) => {
     }
 
     if(service === 'visitor_admin'){
-        if(['sutthiphong', 'isaya', 'siwapornc', 'nairat', 'songyot'].includes(username)){
-            response.role = 'admin';
+        if(!['sutthiphong', 'isaya', 'siwapornc', 'nairat', 'songyot'].includes(username)){
+            return res.status(403).json({
+                message: 'Forbidden: You do not have permission to access this service'
+            });
         }
+        response.role = 'admin';
     }
 
     const payload = {
