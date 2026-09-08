@@ -1,4 +1,6 @@
+import ValidationError from '../class/validationError.js';
 import { mysql_visitor as mysql_con } from '../config/db.js' ;
+import deleteFile from '../services/deleteFile.js';
 import { JWTEncode } from '../services/JWTEncode.js';
 import { validateVisitorID } from '../services/validateVisitorID.js';
 import { validateVisitorPhoneNumber } from '../services/validateVisitorPhoneNumber.js';
@@ -149,9 +151,7 @@ export const addVisitorNew = async (req, res, next) => {
     if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !req.file){
         // Delete the file if it was uploaded to disk
         if (req.file && req.file.path) {
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error('Failed to delete orphaned file:', err);
-            });
+            deleteFile(req.file.path);
         }
         return res.status(400).json({
             message: 'ข้อมูลไม่ครบถ้วน'
@@ -172,9 +172,11 @@ export const addVisitorNew = async (req, res, next) => {
     }catch(error){
         // Delete the file if it was uploaded to disk
         if (req.file && req.file.path) {
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error('Failed to delete orphaned file:', err);
-        });
+            deleteFile(req.file.path);
+        }
+
+        if (error instanceof ValidationError) {
+            return res.status(error.statusCode).json({ message: error.message });
         }
 
         return res.status(500).json({
