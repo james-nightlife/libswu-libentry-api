@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 
 export const tokenCheck = async (req, res, next) => {
     const token = req.headers['authorization'];
+    //console.log('Received token:', req.body);
     //console.log('Received token:', token);
     
     if(!token){

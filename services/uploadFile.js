@@ -1,10 +1,10 @@
 import multer from "multer";
 import fs from "fs";
 
-const storage = multer.diskStorage({
+const storage = (dir) => multer.diskStorage({
   destination: (req, file, cb) => {
-    fs.mkdirSync("upload/", { recursive: true });
-    cb(null, "upload/");
+    fs.mkdirSync(`upload/${dir}`, { recursive: true });
+    cb(null, `upload/${dir}/`);
   },
   filename: (req, file, cb) => {
     const today = new Date();
@@ -35,7 +35,7 @@ const fileFilter = (req, file, cb) => {
 
 // สร้าง instance ของ multer พร้อม storage และ filter
 const upload = multer({
-  storage,
+  storage: storage('visitor'),
   fileFilter,
 });
 

@@ -1,5 +1,5 @@
 import { mysql_visitor as mysql_con } from  '../config/db.js';
-import ValidationError from '../class/validationError.js';
+import {ValidationError} from './exceptions.js';
 
 export const validateVisitorID = async (visitor_id, visitor_type) => {
     if(visitor_type !== '2'){

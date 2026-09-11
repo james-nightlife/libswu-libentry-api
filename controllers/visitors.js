@@ -1,4 +1,4 @@
-import ValidationError from '../class/validationError.js';
+import { ValidationError, ExistingError } from '../services/exceptions.js';
 import { mysql_visitor as mysql_con } from '../config/db.js' ;
 import deleteFile from '../services/deleteFile.js';
 import { JWTEncode } from '../services/JWTEncode.js';
@@ -146,9 +146,26 @@ export const getVisitorById = async (req, res, next) => {
 }
 
 export const addVisitorNew = async (req, res, next) => {
+    /**
+     * const visitor_type = 1;
+     * const visitor_area = 1;
+     * const visitor_id = '1103167890123';
+     * const phone_number = '0812345678';
+     * const firstname = 'John';
+     * const lastname = 'Doe';
+     * const filename = 'example.jpg';
+     */
     const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname } = req.body;
     
-    if(!visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !req.file){
+    if(
+        !visitor_type || 
+        !visitor_area || 
+        !visitor_id || 
+        !phone_number || 
+        !firstname || 
+        !lastname || 
+        !req.file
+    ){
         // Delete the file if it was uploaded to disk
         if (req.file && req.file.path) {
             deleteFile(req.file.path);
@@ -170,6 +187,7 @@ export const addVisitorNew = async (req, res, next) => {
             message: 'Visitor added successfully'
         });
     }catch(error){
+        console.error('Error during visitor creation:', error);
         // Delete the file if it was uploaded to disk
         if (req.file && req.file.path) {
             deleteFile(req.file.path);
@@ -177,6 +195,12 @@ export const addVisitorNew = async (req, res, next) => {
 
         if (error instanceof ValidationError) {
             return res.status(error.statusCode).json({ message: error.message });
+        }
+
+        if(error.message.includes('Duplicate entry')){
+            return res.status(409).json({
+                message: 'ท่านได้ลงทะเบียนแล้ว กรุณาลงชื่อเข้าใช้งานด้วยเลขประจำตัวประชาชน/เลขที่หนังสือเดินทาง และหมายเลขโทรศัพท์มือถือ'
+            })
         }
 
         return res.status(500).json({
@@ -199,6 +223,10 @@ export const addVisitorNew = async (req, res, next) => {
 }
 
 export const signInVisitor = async (req, res, next) => {
+    /** 
+     * const username = '1103167890123';
+     * const password = '0812345678';
+    */
     const { username, password } = req.body;
 
     if(!username || !password) {
@@ -211,8 +239,8 @@ export const signInVisitor = async (req, res, next) => {
         const query = 'SELECT * FROM `visitors` WHERE `visitor_id`=? AND `phone_number`=?;';
         const [result, fields] = await mysql_con.execute(query, [username, password]);
         if(result.length !== 1){
-            return res.status(404).json({
-                message: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
+            return res.status(401).json({
+                'message': 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
             })
         }
         const token = JWTEncode({ visitor_id: result[0].visitor_id });
@@ -225,33 +253,102 @@ export const signInVisitor = async (req, res, next) => {
             status: result[0].status,
         });
     }catch(e){
-
+        console.error('Error during visitor sign-in:', e);
+        if(e instanceof ExistingError){
+            return res.status(e.statusCode).json({ message: e.message });
+        }
+        return res.status(500).json({
+            message: e.message || 'Internal Server Error'
+        })
     }
 
     return res.status(501).json({
-        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้'
+        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้',
+        input: { username, password }
     })
 }
 
 export const editVisitor = async (req, res, next) => {
-    const { id } = req.params;
+    /*
+    const id = 1;
+    const visitor_type = 5;
+    const visitor_area = 1;
+    const visitor_id = '1103167890123';
+    const phone_number = '0812345678';
+    const firstname = 'John';
+    const lastname = 'Doe';
+    const status = 1;
+    }
+    */
+
+    const id = req.params.id;
     const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, status } = req.body;
-    if(!id || !visitor_type || !visitor_area || !visitor_id || !phone_number || !firstname || !lastname || !status){
+    const filename = req.file ? req.file.filename : null;
+
+    if(
+        !id ||
+        !visitor_id || 
+        !visitor_type || 
+        !visitor_area || 
+        !phone_number || 
+        !firstname || 
+        !lastname || 
+        !status
+    ){
         return res.status(400).json({
             message: 'ข้อมูลไม่ครบถ้วน'
         })
     }
-    return res.status(501).json({
-        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถแก้ไขได้',
-        input: {
-            id,
+
+    try{
+        await validateVisitorID(visitor_id, visitor_type);
+        await validateVisitorPhoneNumber(phone_number);
+
+        const checkQuery = 'SELECT * FROM `visitors` WHERE `id`=?;';
+        const [checkResult, checkFields] = await mysql_con.execute(checkQuery, [id]);
+        if(checkResult.length !== 1){
+            throw new ExistingError('Visitor not found');
+        }
+
+        const query = 'UPDATE `visitors` SET visitor_id = ?, visitor_type = ?, visitor_area = ?, phone_number = ?, firstname = ?, lastname = ?, status = ?, filename = ?, update_date = NOW() WHERE `id`=?;';
+        const [result, fields] = await mysql_con.execute(query, [
+            visitor_id,
             visitor_type,
             visitor_area,
-            visitor_id,
             phone_number,
             firstname,
             lastname,
-            status
+            status,
+            filename || checkResult[0].filename || null, // Use existing filename if no new file is uploaded
+            id
+        ]);
+        if(result.affectedRows !== 1){
+            throw new Error('Failed to update visitor in database');
         }
+        return res.status(200).json({
+            message: 'Visitor updated successfully'
+        });
+    }
+        catch(error){
+            console.error('Error during visitor update:', error);
+            // Delete the file if it was uploaded to disk
+            if (req.file && req.file.path) {
+                deleteFile(req.file.path);
+            }
+            if (error instanceof ValidationError) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+            if (error instanceof ExistingError) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+
+            return res.status(500).json({
+                message: error.message || 'Internal Server Error'
+            })
+        }
+
+    return res.status(501).json({
+        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถแก้ไขได้',
+        input: { id, visitor_id, visitor_type, visitor_area, phone_number, firstname, lastname, status, filename, existing_filename }
     })
 }

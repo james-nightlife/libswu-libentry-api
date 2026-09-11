@@ -16,7 +16,7 @@ router.post('/auth', signInVisitor); // ลงชื่อเข้าใช้�
 router.put('/:id', tokenCheck, upload.single('file'), editVisitor); // แก้ไขข้อมูลผู้ใช้บริการบุคคลภายนอก ค้นจากคอลัมน์ id จากตาราง visitors ฐานข้อมูล libswu_visitor ระบบฐานข้อมูล MySQL แก้ไขคอลัมน์ visitor_id visitor_type visitor_area phone_number firstname lastname filename status update_date
 router.get('/upload/:filename', (req, res) => {
     const { filename } = req.params;
-    res.sendFile(path.join(__dirname, 'upload', filename));
+    res.sendFile(path.join(__dirname, 'upload/visitor', filename));
 })
 /* router.get('/upload/:filename', tokenCheck, (req, res) => {
     const { filename } = req.params;
