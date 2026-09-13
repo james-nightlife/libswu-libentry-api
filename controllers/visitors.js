@@ -155,7 +155,7 @@ export const addVisitorNew = async (req, res, next) => {
      * const lastname = 'Doe';
      * const filename = 'example.jpg';
      */
-    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname } = req.body;
+    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, email } = req.body;
     
     if(
         !visitor_type || 
@@ -164,6 +164,7 @@ export const addVisitorNew = async (req, res, next) => {
         !phone_number || 
         !firstname || 
         !lastname || 
+        !email || 
         !req.file
     ){
         // Delete the file if it was uploaded to disk
@@ -178,8 +179,8 @@ export const addVisitorNew = async (req, res, next) => {
     try{
         await validateVisitorID(visitor_id, visitor_type);
         await validateVisitorPhoneNumber(phone_number);
-        const query = 'INSERT INTO `visitors` (visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, filename) VALUES (?, ?, ?, ?, ?, ?, ?);';
-        const [result, fields] = await mysql_con.execute(query, [visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, req.file.filename]);
+        const query = 'INSERT INTO `visitors` (visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, email, filename) VALUES (?, ?, ?, ?, ?, ?, ?, ?);';
+        const [result, fields] = await mysql_con.execute(query, [visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, email, req.file.filename]);
         if(result.affectedRows !== 1){
             throw new Error('Failed to insert visitor into database');
         }
@@ -217,7 +218,8 @@ export const addVisitorNew = async (req, res, next) => {
             phone_number,
             firstname,
             lastname,
-            filename: req.file.filename
+            email,
+            filename: req.file.filename,
         }
     })
 }
@@ -243,14 +245,10 @@ export const signInVisitor = async (req, res, next) => {
                 'message': 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
             })
         }
-        const token = JWTEncode({ visitor_id: result[0].visitor_id });
+        const token = JWTEncode({ ...result[0] });
         return res.status(200).json({ 
             token,
-            visitor_id: result[0].visitor_id,
-            firstname: result[0].firstname,
-            lastname: result[0].lastname,
-            filename: result[0].filename,
-            status: result[0].status,
+            ...result[0],
         });
     }catch(e){
         console.error('Error during visitor sign-in:', e);
@@ -282,7 +280,7 @@ export const editVisitor = async (req, res, next) => {
     */
 
     const id = req.params.id;
-    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, status } = req.body;
+    const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, status, email } = req.body;
     const filename = req.file ? req.file.filename : null;
 
     if(
@@ -293,7 +291,8 @@ export const editVisitor = async (req, res, next) => {
         !phone_number || 
         !firstname || 
         !lastname || 
-        !status
+        !status ||
+        !email
     ){
         return res.status(400).json({
             message: 'ข้อมูลไม่ครบถ้วน'
@@ -310,7 +309,7 @@ export const editVisitor = async (req, res, next) => {
             throw new ExistingError('Visitor not found');
         }
 
-        const query = 'UPDATE `visitors` SET visitor_id = ?, visitor_type = ?, visitor_area = ?, phone_number = ?, firstname = ?, lastname = ?, status = ?, filename = ?, update_date = NOW() WHERE `id`=?;';
+        const query = 'UPDATE `visitors` SET visitor_id = ?, visitor_type = ?, visitor_area = ?, phone_number = ?, firstname = ?, lastname = ?, email = ?, status = ?, filename = ?, update_date = NOW() WHERE `id`=?;';
         const [result, fields] = await mysql_con.execute(query, [
             visitor_id,
             visitor_type,
@@ -318,6 +317,7 @@ export const editVisitor = async (req, res, next) => {
             phone_number,
             firstname,
             lastname,
+            email,
             status,
             filename || checkResult[0].filename || null, // Use existing filename if no new file is uploaded
             id
@@ -349,6 +349,6 @@ export const editVisitor = async (req, res, next) => {
 
     return res.status(501).json({
         message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถแก้ไขได้',
-        input: { id, visitor_id, visitor_type, visitor_area, phone_number, firstname, lastname, status, filename, existing_filename }
+        input: { id, visitor_id, visitor_type, visitor_area, phone_number, firstname, lastname, email, status, filename, existing_filename }
     })
 }
