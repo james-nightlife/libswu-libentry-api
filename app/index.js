@@ -17,6 +17,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+    const time = new Date().toISOString();
+    console.log(`[${time}] ${req.method} ${req.url} ${req.ip}`);
+    next();
+})
+
 // Deploying routes
 app.use('/citizen-id-check', citizenIdCheck);
 app.use('/passport-id-check', passportIdCheck);
@@ -31,22 +37,21 @@ app.use('/visitors', visitors);
 
 app.use('/gate', gate);
 
-
-
-
 app.use((req, res) => {
-    res.status(404).json({
-        status: 'Error',
+    return res.status(404).json({
         message: 'Endpoint not found'
     });
 });
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        status: 'Error',
-        message: err.message || 'Internal Server Error'
-    });
+    const statusCode = err.statusCode || err.status || 500;
+    const message = err.message || 'Internal Server Error';
+
+    return res.status(statusCode).json({
+      message,
+      // Avoid leaking stack traces in production environments
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    })
 });
 
 export { app };

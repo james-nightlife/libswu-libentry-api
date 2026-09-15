@@ -1,10 +1,10 @@
-import { ValidationError, ExistingError } from '../services/exceptions.js';
+import { ExistingError, BadRequestError, UnauthorizedError } from '../services/exceptions.js';
 import { mysql_visitor as mysql_con } from '../config/db.js' ;
 import deleteFile from '../services/deleteFile.js';
 import { JWTEncode } from '../services/JWTEncode.js';
 import { validateVisitorID } from '../services/validateVisitorID.js';
 import { validateVisitorPhoneNumber } from '../services/validateVisitorPhoneNumber.js';
-import fs from 'fs';
+import { auditLog } from '../services/auditLog.js';
 
 export const addVisitor = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, visitor_phone_number } = req.body;
@@ -108,43 +108,48 @@ export const getVisitors = async (req, res, next) => {
     }
 }
 
+// GET METHOD
 export const getVisitorsNew = async (req, res, next) => {
     try{
+        //console.log(req.params.decoded)
+        if(!req.params.decoded.username){
+            throw new UnauthorizedError('Admin Only')
+        }
         const query = 'SELECT * FROM visitors;';
         const [result, fields] = await mysql_con.execute(query);
+        auditLog('visitor', req.params.decoded.username || req.params.decoded.visitor_id || req.ip, 'getVisitors', 'visitor', 'success', req.ip)
         return res.status(200).json(result);
-    }catch(error){
-        return res.status(500).json({
-            message: error.message || 'Internal Server Error'
-        });
+    }catch(e){
+        console.error(e)
+        auditLog('visitor', req.params.decoded.username || req.params.decoded.visitor_id || req.ip, 'getVisitors', 'visitor', 'failed', req.ip, e.message)
+        next(e)
     }
 }
 
+// GET METHOD
 export const getVisitorById = async (req, res, next) => {
     const { id } = req.params;
 
-    if(!id){
-        return res.status(400).json({
-            message: 'กรุณาระบุ ID'
-        })
-    }
-
     try{
+        if(!id){
+            throw new BadRequestError('Incomplete Request')
+        }
+
         const query = 'SELECT * FROM `visitors` WHERE `id`=?;';
         const [result, fields] = await mysql_con.execute(query, [id]);
         if(result.length !== 1){
-            return res.status(404).json({
-                message: 'Visitor not found'
-            })
+            throw new ExistingError('Visitor not found')
         }
+        auditLog('visitor', req.params.decoded.username || req.params.decoded.visitor_id || req.ip, 'getVisitor', id, 'success', req.ip)
         return res.status(200).json(result[0]);
-    }catch(error){
-        return res.status(500).json({
-        message: error.message || 'Internal Server Error'
-        })
+    }catch(e){
+        console.error(e)
+        auditLog('visitor', req.params.decoded.username || req.params.decoded.visitor_id || req.ip, 'getVisitor', id, 'failed', req.ip, e.message)
+        next(e)
     }
 }
 
+// POST METHOD 
 export const addVisitorNew = async (req, res, next) => {
     /**
      * const visitor_type = 1;
@@ -157,26 +162,20 @@ export const addVisitorNew = async (req, res, next) => {
      */
     const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, email } = req.body;
     
-    if(
-        !visitor_type || 
-        !visitor_area || 
-        !visitor_id || 
-        !phone_number || 
-        !firstname || 
-        !lastname || 
-        !email || 
-        !req.file
-    ){
-        // Delete the file if it was uploaded to disk
-        if (req.file && req.file.path) {
-            deleteFile(req.file.path);
-        }
-        return res.status(400).json({
-            message: 'ข้อมูลไม่ครบถ้วน'
-        })
-    }
-
     try{
+        if(
+            !visitor_type || 
+            !visitor_area || 
+            !visitor_id || 
+            !phone_number || 
+            !firstname || 
+            !lastname || 
+            !email || 
+            !req.file
+        ){
+            throw new BadRequestError('ข้อมูลไม่ครบถ้วน')
+        }
+
         await validateVisitorID(visitor_id, visitor_type);
         await validateVisitorPhoneNumber(phone_number);
         const query = 'INSERT INTO `visitors` (visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, email, filename) VALUES (?, ?, ?, ?, ?, ?, ?, ?);';
@@ -184,46 +183,25 @@ export const addVisitorNew = async (req, res, next) => {
         if(result.affectedRows !== 1){
             throw new Error('Failed to insert visitor into database');
         }
+
+        auditLog(`visitor`, visitor_id, 'insert', visitor_id, 'success', req.ip);
+        
         return res.status(201).json({
             message: 'Visitor added successfully'
         });
-    }catch(error){
-        console.error('Error during visitor creation:', error);
+    }catch(e){
+        console.error('Error during visitor creation:', e);
+        auditLog(`visitor`, visitor_id, 'insert', visitor_id, 'failed', req.ip, e.message);
         // Delete the file if it was uploaded to disk
         if (req.file && req.file.path) {
             deleteFile(req.file.path);
         }
 
-        if (error instanceof ValidationError) {
-            return res.status(error.statusCode).json({ message: error.message });
-        }
-
-        if(error.message.includes('Duplicate entry')){
-            return res.status(409).json({
-                message: 'ท่านได้ลงทะเบียนแล้ว กรุณาลงชื่อเข้าใช้งานด้วยเลขประจำตัวประชาชน/เลขที่หนังสือเดินทาง และหมายเลขโทรศัพท์มือถือ'
-            })
-        }
-
-        return res.status(500).json({
-            message: error.message || 'Internal Server Error'
-        })
+        return next(e);
     }
-
-    return res.status(501).json({
-        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้',
-        input: {
-            visitor_type, 
-            visitor_area,
-            visitor_id,
-            phone_number,
-            firstname,
-            lastname,
-            email,
-            filename: req.file.filename,
-        }
-    })
 }
 
+// POST METHOD /visitors/auth
 export const signInVisitor = async (req, res, next) => {
     /** 
      * const username = '1103167890123';
@@ -231,41 +209,31 @@ export const signInVisitor = async (req, res, next) => {
     */
     const { username, password } = req.body;
 
-    if(!username || !password) {
-        return res.status(400).json({
-            'message': 'กรุณาระบุชื่อผู้ใช้งานและรหัสผ่าน'
-        })
-    }
-
     try{
+
+        if(!username || !password) {
+            throw new BadRequestError('Incomplete Request')
+        }
+
         const query = 'SELECT * FROM `visitors` WHERE `visitor_id`=? AND `phone_number`=?;';
         const [result, fields] = await mysql_con.execute(query, [username, password]);
         if(result.length !== 1){
-            return res.status(401).json({
-                'message': 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
-            })
+            throw new UnauthorizedError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
         }
         const token = JWTEncode({ ...result[0] });
+        auditLog(`visitor`, username || req.ip, 'signIn', username, 'success', req.ip);
         return res.status(200).json({ 
             token,
             ...result[0],
         });
     }catch(e){
         console.error('Error during visitor sign-in:', e);
-        if(e instanceof ExistingError){
-            return res.status(e.statusCode).json({ message: e.message });
-        }
-        return res.status(500).json({
-            message: e.message || 'Internal Server Error'
-        })
+        auditLog(`visitor`, username || req.ip, 'signIn', username, 'failed', req.ip, e.message);
+        return next(e);
     }
-
-    return res.status(501).json({
-        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถบันทึกได้',
-        input: { username, password }
-    })
 }
 
+// PUT METHOD /visitors/:id
 export const editVisitor = async (req, res, next) => {
     /*
     const id = 1;
@@ -283,23 +251,20 @@ export const editVisitor = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, phone_number, firstname, lastname, status, email } = req.body;
     const filename = req.file ? req.file.filename : null;
 
-    if(
-        !id ||
-        !visitor_id || 
-        !visitor_type || 
-        !visitor_area || 
-        !phone_number || 
-        !firstname || 
-        !lastname || 
-        !status ||
-        !email
-    ){
-        return res.status(400).json({
-            message: 'ข้อมูลไม่ครบถ้วน'
-        })
-    }
-
     try{
+        if(
+            !id ||
+            !visitor_id || 
+            !visitor_type || 
+            !visitor_area || 
+            !phone_number || 
+            !firstname || 
+            !lastname || 
+            !status ||
+            !email
+        ){
+            throw new BadRequestError('Incomplete Request')
+    }
         await validateVisitorID(visitor_id, visitor_type);
         await validateVisitorPhoneNumber(phone_number);
 
@@ -325,30 +290,21 @@ export const editVisitor = async (req, res, next) => {
         if(result.affectedRows !== 1){
             throw new Error('Failed to update visitor in database');
         }
+
+        await auditLog(`visitor`, req.params.decoded.username || req.params.decoded.visitor_id || visitor_id, 'update', visitor_id, 'success', req.ip);
+        
         return res.status(200).json({
             message: 'Visitor updated successfully'
         });
     }
-        catch(error){
-            console.error('Error during visitor update:', error);
+        catch(e){
+            auditLog(`visitor`, req.params.decoded.username || req.params.decoded.visitor_id || visitor_id, 'update', visitor_id, 'failed', req.ip, e.message);
+            console.error('Error during visitor update:', e);
             // Delete the file if it was uploaded to disk
             if (req.file && req.file.path) {
                 deleteFile(req.file.path);
             }
-            if (error instanceof ValidationError) {
-                return res.status(error.statusCode).json({ message: error.message });
-            }
-            if (error instanceof ExistingError) {
-                return res.status(error.statusCode).json({ message: error.message });
-            }
 
-            return res.status(500).json({
-                message: error.message || 'Internal Server Error'
-            })
+            return next(e)
         }
-
-    return res.status(501).json({
-        message: 'ข้อมูลครบถ้วน แต่ยังไม่สามารถแก้ไขได้',
-        input: { id, visitor_id, visitor_type, visitor_area, phone_number, firstname, lastname, email, status, filename, existing_filename }
-    })
 }
