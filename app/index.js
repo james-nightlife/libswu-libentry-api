@@ -45,7 +45,12 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || err.status || 500;
-    const message = err.message || 'Internal Server Error';
+    var message = err.message || 'Internal Server Error';
+    console.log(message);
+
+    if(message.startsWith('Duplicate entry')){
+        message = 'เลขประจำตัวประชาชนหรือเลขที่หนังสือของท่านได้ลงทะเบียนแล้ว';
+    }
 
     return res.status(statusCode).json({
       message,
