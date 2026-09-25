@@ -5,6 +5,7 @@ import { JWTEncode } from '../services/JWTEncode.js';
 import { validateVisitorID } from '../services/validateVisitorID.js';
 import { validateVisitorPhoneNumber } from '../services/validateVisitorPhoneNumber.js';
 import { auditLog } from '../services/auditLog.js';
+import { gateSignIn } from '../services/gateSignIn.js';
 
 export const addVisitor = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, visitor_phone_number } = req.body;
@@ -290,6 +291,10 @@ export const editVisitor = async (req, res, next) => {
         if(result.affectedRows !== 1){
             throw new Error('Failed to update visitor in database');
         }
+
+        /*if(status && (status !== checkResult[0].status)){
+            const gate_cookies = await gateSignIn();
+        }*/
 
         await auditLog(`visitor`, req.params.decoded.username || req.params.decoded.visitor_id || visitor_id, 'update', visitor_id, 'success', req.ip);
         
