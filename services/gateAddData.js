@@ -1,17 +1,30 @@
-const gateAddData = async (cookies_string, user_id, unique_id, firstname = '', middlename = '', lname = '') => {
-    const now = new Date();
-    const createDate = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, 0)}-${(now.getDate()).toString().padStart(2, 0)} ${(now.getHours()).toString().padStart(2, 0)}:${(now.getMinutes()).toString().padStart(2, 0)}:${(now.getSeconds()).toString().padStart(2, 0)}`;
-    const expireDate = `${parseInt(startDate.substring(0, 4)) - 543 + 42}-09-30 23:59:59`;
-    // Create the user in the gate system using the new ID and user information
-    const create_user = await fetch(
+import axios from "axios";
+
+export const gateAddData = async (cookies_string, user_id, unique_id, firstname = '', middlename = '', lastname = '', department = '', groupCode=4000, accessGroupCode=5605) => {
+    console.log(cookies_string, typeof(cookies_string))
+    console.log(user_id, typeof(user_id))
+    //console.log(Number(user_id), typeof(Number(user_id)))
+    console.log(unique_id, typeof(unique_id))
+    console.log(firstname, typeof(firstname))
+    console.log(middlename, typeof(middlename))
+    console.log(lastname, typeof(lastname))
+    console.log(department, typeof(department))
+    console.log(groupCode, typeof(groupCode))
+    console.log(accessGroupCode, typeof(accessGroupCode))
+
+
+
+    try{
+        const now = new Date();
+        const createDate = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, 0)}-${(now.getDate()).toString().padStart(2, 0)} ${(now.getHours()).toString().padStart(2, 0)}:${(now.getMinutes()).toString().padStart(2, 0)}:${(now.getSeconds()).toString().padStart(2, 0)}`;
+        const startDate = createDate;
+        const expireDate = `${parseInt(startDate.substring(0, 4)) + 42}-09-30 23:59:59`;
+        console.log(createDate)
+        console.log(expireDate)
+        // Create the user in the gate system using the new ID and user information
+        const create_user = await axios.post(
         `${process.env.GATE_API_URL}/v1/users?UserID=${user_id}`, 
         {
-            method: 'POST',
-            headers: { 
-                'Cookie': cookies_string,
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify({
                 "UserInfo": {
                     "ID": user_id,
                     "UniqueID": unique_id,
@@ -32,8 +45,8 @@ const gateAddData = async (cookies_string, user_id, unique_id, firstname = '', m
                     "RegistDate": createDate,
                     "ExpireDate": expireDate,
                     "Password": "",
-                    "GroupCode": 4000,
-                    "AccessGroupCode": 5605,
+                    "GroupCode": groupCode,
+                    "AccessGroupCode": accessGroupCode,
                     "UserType": 0,
                     "TimezoneCode": 0,
                     "BlackList": 0,
@@ -49,7 +62,7 @@ const gateAddData = async (cookies_string, user_id, unique_id, firstname = '', m
                     "MessageCode": 0,
                     "VerifyLevel": 0,
                     "PositionCode": 0,
-                    "Department": "บุคคลภายนอก",
+                    "Department": department,
                     "LoginPW": "",
                     "LoginAllowed": 0,
                     "Picture": "",
@@ -59,17 +72,25 @@ const gateAddData = async (cookies_string, user_id, unique_id, firstname = '', m
                 },
                 "UserCardInfo": [
                     {
-                    "CardNum": user_id.toString(),
+                    "CardNum": unique_id,
                     }
                 ],
-                })
-        });
-        if(create_user.status !== 200){
-            throw new Error(`Get users request failed with status: ${users.status}`);
-        }
-        const createUserData = await create_user.json();
-        //console.log("Create User Data:", createUserData);
+            },
+        {
+            headers: { 
+                'Cookie': cookies_string,
+                'Content-Type': 'application/json' 
+            }
+        })
+
+        const createUserData = await create_user.data;
+
         if(createUserData.Result.ResultCode !== 0){
             throw new Error(`Create user failed, result code: ${createUserData.Result.ResultCode}`);
         }
-}
+    }catch(e){
+        console.error(e)
+        throw Error('Insert User Data into Gate System Failed')
+
+    }
+ }

@@ -6,6 +6,9 @@ import { validateVisitorID } from '../services/validateVisitorID.js';
 import { validateVisitorPhoneNumber } from '../services/validateVisitorPhoneNumber.js';
 import { auditLog } from '../services/auditLog.js';
 import { gateSignIn } from '../services/gateSignIn.js';
+import { gateExistCheck } from '../services/gateExistCheck.js';
+import { gateAutoIncrement } from '../services/gateAutoIncrement.js';
+import { gateAddData } from '../services/gateAddData.js';
 
 export const addVisitor = async (req, res, next) => {
     const { visitor_type, visitor_area, visitor_id, visitor_phone_number } = req.body;
@@ -292,9 +295,16 @@ export const editVisitor = async (req, res, next) => {
             throw new Error('Failed to update visitor in database');
         }
 
-        /*if(status && (status !== checkResult[0].status)){
+        if(status === '1' && (status !== checkResult[0].status)){
             const gate_cookies = await gateSignIn();
-        }*/
+            const gate_exist = await gateExistCheck(gate_cookies, visitor_id);
+            if(!gate_exist){
+                const gate_id = await gateAutoIncrement(gate_cookies);
+                await gateAddData(gate_cookies, gate_id, visitor_id, firstname, undefined, lastname, 'บุคคลภายนอก', undefined, undefined)
+            }
+            
+            
+        }
 
         await auditLog(`visitor`, req.params.decoded.username || req.params.decoded.visitor_id || visitor_id, 'update', visitor_id, 'success', req.ip);
         

@@ -23,17 +23,20 @@ export const gateSignIn = async () => {
             throw new Error(`Login failed, result code: ${sessionData.Result.ResultCode}`);
         }
 
-        const cookies = session.headers.get('set-cookie');
-        const ucsMatch = cookies?.match(/ucsinfo=[^;]+/);
-        const extMatch = cookies?.match(/extinfo=[^;]+/);
+        const cookies = session.headers["set-cookie"]
+        const ucsMatch = cookies[0];
+        const extMatch = cookies[1];
+
+        console.log(cookies)
 
         if (!ucsMatch || !extMatch) {
             throw new Error("Missing authentication cookies from login response");
         }
         
-        const cookies_string = `${ucsMatch[0]}; ${extMatch[0]}`;
+        const cookies_string = `${ucsMatch}; ${extMatch}`;
         return cookies_string
     }catch(e){
+        console.error(e)
         throw new Error("Gate API Authentication Failed");
     }
 }

@@ -14,8 +14,10 @@ export const gateAutoIncrement = async (cookies_string) => {
         if(initUserInfo_res.Result.ResultCode !== 0){
             throw new Error(`Get user ID failed, result code: ${initUserInfo_res.Result.ResultCode}`);
         }
-        return new_id_data.dmUserInfo.ID
+        console.log(initUserInfo_res)
+        return initUserInfo_res.dmUserInfo.ID
     }catch(e){
+        console.error(e)
         throw new Error('')
     }            
 }
