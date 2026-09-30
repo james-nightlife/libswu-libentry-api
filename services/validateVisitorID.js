@@ -7,13 +7,13 @@ export const validateVisitorID = async (visitor_id, visitor_type) => {
                 !/^[0-9]{13}$/.test(visitor_id) || 
                 !['1','2','3','4','5','6','7','8','9'].includes(visitor_id[0])
             ){
-                throw new ValidationError('Invalid Citizen ID format');
+                throw new ValidationError('รูปแบบเลขประจำตัวประชาชนไม่ถูกต้อง');
             }
 
             const regionCodeQuery = 'SELECT 1 FROM rcode WHERE local_id = ? LIMIT 1;';
             const [result, fields] = await mysql_con.execute(regionCodeQuery, [visitor_id.substring(1, 5)])
             if(result.length !== 1){
-                throw new ValidationError('Invalid Citizen ID');
+                throw new ValidationError('รูปแบบเลขประจำตัวประชาชนไม่ถูกต้อง');
             }
             
             let sum = 0;
