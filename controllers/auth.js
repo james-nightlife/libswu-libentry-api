@@ -53,7 +53,22 @@ export const authenticateUser = async (req, res, next) => {
     }
 
     if(service === 'visitor_admin'){
-        if(!['sutthiphong', 'isaya', 'siwapornc', 'nairat', 'songyot'].includes(username)){
+        if(![
+            'songyot',
+            'siwapornc', 
+            'sutthiphong', 
+            'isaya',
+            'anchaleet',
+            'arunrat',
+            'bongkotrat',
+            'piyarak',
+            'krengsak',
+            'apidaj',
+            'ratchaneek',
+            'datnarong',
+            'kittisakk',
+            'surachai'
+        ].includes(username)){
             return res.status(403).json({
                 message: 'Forbidden: You do not have permission to access this service'
             });

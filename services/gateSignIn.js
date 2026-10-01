@@ -27,7 +27,7 @@ export const gateSignIn = async () => {
         const ucsMatch = cookies[0];
         const extMatch = cookies[1];
 
-        console.log(cookies)
+        //console.log(cookies)
 
         if (!ucsMatch || !extMatch) {
             throw new Error("Missing authentication cookies from login response");

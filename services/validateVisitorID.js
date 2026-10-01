@@ -22,7 +22,7 @@ export const validateVisitorID = async (visitor_id, visitor_type) => {
             }
             const check_digit = (11 - (sum % 11)) % 10;
             if(check_digit !== parseInt(visitor_id[12])){
-                throw new ValidationError('Invalid Citizen ID');
+                throw new ValidationError('รูปแบบเลขประจำตัวประชาชนไม่ถูกต้อง');
             }
         }else{
             if(!/(^[0-9A-Z]{8,}$)/.test(visitor_id)){

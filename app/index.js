@@ -9,6 +9,7 @@ import users from '../routes/users.js';
 import visitors from '../routes/visitors.js';
 import passportIdCheck from '../routes/passport-id-check.js';
 import citizenIdCheck from '../routes/citizen-id-check.js';
+import rating from '../routes/rating.js';
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/avservice', avService);
 app.use('/auth', auth);
 app.use('/users', users);
 app.use('/visitors', visitors);
+app.use('/rating', rating)
 
 app.use('/gate', gate);
 
