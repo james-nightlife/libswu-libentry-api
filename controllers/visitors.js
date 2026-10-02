@@ -228,12 +228,13 @@ export const signInVisitor = async (req, res, next) => {
         
         // ต้องแทรกแถว 1 แถวต่อวันเท่านั้น
         if(result[0].status === 1){
-            const signInQuery = 'INSERT INTO `visitors_sign_in` (`visitor_id`) VALUES (?);';
-            await mysql_con.execute(signInQuery, [username]);
+            //const signInQuery = 'INSERT INTO `visitors_sign_in` (`visitor_id`) VALUES (?);';
+            const signInQuery = 'INSERT INTO `visitors_sign_in` (`visitor_id`) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM `visitors_sign_in` WHERE `visitor_id` = ? AND DATE(`sign_in_time`) = CURRENT_DATE());'
+            await mysql_con.execute(signInQuery, [username, username]);
         }
 
         //เช็กเฉพาะแถวก่อนหน้า 1 แถว
-        const rating_query = 'SELECT COUNT(`id`) FROM `visitors_sign_in` WHERE (`visitor_id`=?) AND (`rating_score` IS NULL) AND (DATE(`sign_in_time`) <> DATE(NOW()));'
+        const rating_query = 'SELECT * FROM `visitors_sign_in` WHERE ((`visitor_id`=?) AND (`rating_score` IS NULL) AND (DATE(`sign_in_time`) <> DATE(NOW()))) ORDER BY `sign_in_time` DESC LIMIT 1;'
         const [rating_query_result, rating_query_fields] = await mysql_con.execute(rating_query, [username]);
         console.log(rating_query_result)
 
@@ -241,7 +242,7 @@ export const signInVisitor = async (req, res, next) => {
         return res.status(200).json({ 
             token,
             ...result[0],
-            force_rating: rating_query_result[0]['COUNT(`id`)']
+            force_rating: rating_query_result.length
         });
     }catch(e){
         console.error('Error during visitor sign-in:', e);
