@@ -234,15 +234,17 @@ export const signInVisitor = async (req, res, next) => {
         }
 
         //เช็กเฉพาะแถวก่อนหน้า 1 แถว
-        const rating_query = 'SELECT * FROM `visitors_sign_in` WHERE ((`visitor_id`=?) AND (`rating_score` IS NULL) AND (DATE(`sign_in_time`) <> DATE(NOW()))) ORDER BY `sign_in_time` DESC LIMIT 1;'
+        const rating_query = 'SELECT * FROM `visitors_sign_in` WHERE ((`visitor_id`=?) AND (DATE(`sign_in_time`) <> DATE(NOW()))) ORDER BY `sign_in_time` DESC LIMIT 1;'
         const [rating_query_result, rating_query_fields] = await mysql_con.execute(rating_query, [username]);
-        console.log(rating_query_result)
-
+        const rating_query_result_valid = rating_query_result.find((x) => !x.rating_score);
+        //console.log(rating_query_result)
+        //console.log(rating_query_result_valid)
+        
         auditLog(`visitor`, username || req.ip, 'signIn', username, 'success', req.ip);        
         return res.status(200).json({ 
             token,
             ...result[0],
-            force_rating: rating_query_result.length
+            force_rating: rating_query_result_valid
         });
     }catch(e){
         console.error('Error during visitor sign-in:', e);
