@@ -25,7 +25,7 @@ export const validateVisitorID = async (visitor_id, visitor_type) => {
                 throw new ValidationError('รูปแบบเลขประจำตัวประชาชนไม่ถูกต้อง');
             }
         }else{
-            if(!/(^[0-9A-Z]{8,}$)/.test(visitor_id)){
+            if(!/(^[0-9A-Z]{7,}$)/.test(visitor_id)){
                 throw new ValidationError('Invalid Passport ID format');
             }
             }
