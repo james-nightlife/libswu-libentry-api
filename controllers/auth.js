@@ -68,7 +68,8 @@ export const authenticateUser = async (req, res, next) => {
             'datnarong',
             'kittisakk',
             'surachai',
-            'kiattisak'
+            'kiattisak',
+            'pariwats',
         ].includes(username)){
             return res.status(403).json({
                 message: 'Forbidden: You do not have permission to access this service'
