@@ -2,7 +2,7 @@ import { mysql_visitor as mysql_con } from  '../config/db.js';
 import {ValidationError} from './exceptions.js';
 
 export const validateVisitorID = async (visitor_id, visitor_type) => {
-    if(visitor_type !== '2'){
+    if(!['2', '11'].includes(visitor_type)){
             if(
                 !/^[0-9]{13}$/.test(visitor_id) || 
                 !['1','2','3','4','5','6','7','8','9'].includes(visitor_id[0])
