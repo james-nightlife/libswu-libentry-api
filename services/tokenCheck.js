@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'; 
+import { UnauthorizedError } from './exceptions.js';
 
 export const tokenCheck = async (req, res, next) => {
     const token = req.headers['authorization'];
@@ -17,17 +18,11 @@ export const tokenCheck = async (req, res, next) => {
     }catch(err){
         console.error('JWT verification error:', err);
         if(err.name === 'JsonWebTokenError'){
-            return res.status(401).json({
-                'message': 'Unauthorized: Invalid token'
-            });
+            throw new UnauthorizedError('Unauthorized: Invalid token')
         }
         if(err.name === 'TokenExpiredError'){
-            return res.status(401).json({
-                'message': 'Unauthorized: Token has expired'
-            });
+            throw new UnauthorizedError('Unauthorized: Token has expired')
         }
-        return res.status(401).json({
-            'message': 'Unauthorized: Token verification failed'
-        });
+        throw new UnauthorizedError('Unauthorized: Token verification failed')
     }
 }
